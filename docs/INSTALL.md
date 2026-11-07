@@ -36,10 +36,18 @@ DSH 的**插件索引**是一份 JSON 清单，列出可安装的组合包及其
 **步骤**
 
 1. 打开 DSH Desktop → 左侧栏 **插件** → **发现** 标签。
-2. 点 **添加索引源**，填入本仓库的索引地址：
+2. 点 **添加索引源**，填入本仓库的索引地址（任选其一）：
 
    ```text
    https://raw.githubusercontent.com/stuPETER12138/dsh-plugins/main/index.json
+   ```
+
+   如果 `raw.githubusercontent.com` 在你的网络下不可达，用 jsDelivr 的 GitHub 镜像之一（内容相同，可能有几小时 CDN 缓存；索引里的版本仍固定到具体 commit）：
+
+   ```text
+   https://cdn.jsdelivr.net/gh/stuPETER12138/dsh-plugins@main/index.json
+   https://fastly.jsdelivr.net/gh/stuPETER12138/dsh-plugins@main/index.json
+   https://gcore.jsdelivr.net/gh/stuPETER12138/dsh-plugins@main/index.json
    ```
 
 3. 等待索引读取完成，在列表中找到插件，打开条目后可看到默认版本、来源（Git 仓库 + 固定 commit + 目录）和「安装」按钮。
@@ -107,6 +115,7 @@ dsh plugin --profile myprofile add "link:D:\github\dsh-plugins\dsh-sticky-wall"
 
 - DSH `0.2.2` 的 `dsh plugin` 会在 pnpm 安装成功后，**自动把组合包加入该 profile `package.json` 的 `dsh.profile.bundles`**。
 - 装完后重启该 profile（重新执行 `dsh --profile myprofile ...`）才会加载。
+- 如果安装的是 Git spec（形如 `git+https://...#<commit>&path:/<dir>`，即插件索引生成的地址），在 Windows 的 `cmd.exe` 下必须把整个 spec 用**单引号再包一层**，否则 `&` 会被命令解释器截断；从插件页 / 索引安装时由 Host 直接调用 pnpm，不存在这个问题。
 - 如果目标是 Desktop 的 `desktop` profile：不要从外部 CLI 改它，使用方式 A/B，让桌面端自己管理依赖与锁。
 - CLI 需要 PATH 上有 pnpm（Desktop 自带运行时 pnpm 在 `resources/runtime/primary-runtime/dependencies/pnpm`；用 DSH 自带 CLI 时也可用 `resources/runtime/cli/bin/dsh.cmd`）。
 
@@ -177,7 +186,16 @@ dsh plugin --profile <profile> remove @local/dsh-xxx
 请使用 Windows 绝对路径（如 `D:\github\dsh-plugins\dsh-usage-stats`），或以 `link:` 开头的绝对路径；不要用 `.`、`..`、`~`、环境变量。
 
 **Q4：安装时无法访问 GitHub / 一直超时。**
-方式 A 依赖 GitHub 可达（插件版本固定在 GitHub commit 上）。改用方式 B 的本地文件夹安装即可完全离线。
+方式 A 依赖 GitHub 可达（插件版本固定在 GitHub commit 上）。改用方式 B 的本地文件夹安装即可完全离线，无需任何 GitHub 连接。
+如果你仍想用方式 A，但本机只有 GitHub SSH 可用、HTTPS 被阻断，可以临时让 Git 把 HTTPS 地址重写为 SSH（要求本机已把 SSH key 加到 GitHub 账号）：
+
+```powershell
+# 只影响当前这次安装命令；幂等，可用 git config --global --unset url.ssh://git@github.com/.insteadOf 撤销
+$env:GIT_CONFIG_GLOBAL = "$env:TEMP\dsh-gitconfig"
+New-Item -ItemType File -Force $env:GIT_CONFIG_GLOBAL | Out-Null
+git config --file $env:GIT_CONFIG_GLOBAL url."ssh://git@github.com/".insteadOf "https://github.com/"
+# 保持该环境变量，再从 DSH 插件页/索引安装
+```
 
 **Q5：安装成功，但界面上没有新功能。**
 ① 确认点了「立即启用」且插件页开关是开；② 刷新页面；③ 仍然没有就重启 DSH Desktop（尤其替换过 Host 半代码时）。

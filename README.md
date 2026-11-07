@@ -23,10 +23,18 @@
 前提：插件页有 **发现 / Discover** 标签（即启用了 DSH 的可选插件「自定义插件索引」），且本机能访问 GitHub。
 
 1. 打开 **插件** 页 → **发现** 标签 → **添加索引源**。
-2. 填入本仓库的索引地址：
+2. 填入本仓库的索引地址（任选其一）：
 
    ```text
    https://raw.githubusercontent.com/stuPETER12138/dsh-plugins/main/index.json
+   ```
+
+   如果 `raw.githubusercontent.com` 在你的网络下不可达，可用 jsDelivr 的 GitHub 镜像之一（内容相同，可能有几小时 CDN 缓存）：
+
+   ```text
+   https://cdn.jsdelivr.net/gh/stuPETER12138/dsh-plugins@main/index.json
+   https://fastly.jsdelivr.net/gh/stuPETER12138/dsh-plugins@main/index.json
+   https://gcore.jsdelivr.net/gh/stuPETER12138/dsh-plugins@main/index.json
    ```
 
 3. 在列表里找到插件 → **安装** → **立即启用**。
