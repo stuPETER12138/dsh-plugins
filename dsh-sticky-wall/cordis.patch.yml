@@ -1,0 +1,5 @@
+# Sticky Wall bundle: one row. The Host half is empty; the browser half registers
+# the left-sidebar entry and its main panel.
+- insert:
+    - id: sticky-wall
+      name: '@local/dsh-sticky-wall'

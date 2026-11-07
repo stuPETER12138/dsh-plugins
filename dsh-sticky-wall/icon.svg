@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Sticky Wall">
+  <defs>
+    <linearGradient id="paper" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F7D774"/>
+      <stop offset="1" stop-color="#E9B949"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="40" y1="44" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D8A62F"/>
+      <stop offset="1" stop-color="#C08F1F"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 7h30a9 9 0 0 1 9 9v22.5a9 9 0 0 1-2.636 6.364l-8.5 8.5A9 9 0 0 1 35.5 56H14a7 7 0 0 1-7-7V14a7 7 0 0 1 7-7Z" fill="url(#paper)"/>
+  <path d="M45.5 54.5V46a7 7 0 0 1 7-7h8.4a9 9 0 0 1-1.9 3.2l-8.3 8.3a9 9 0 0 1-5.2 4Z" fill="url(#fold)"/>
+  <g stroke="#8A6410" stroke-width="3.2" stroke-linecap="round" opacity="0.85">
+    <path d="M18 21h20"/>
+    <path d="M18 29h24"/>
+    <path d="M18 37h15"/>
+  </g>
+</svg>

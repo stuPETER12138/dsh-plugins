@@ -1,0 +1,4 @@
+# Session share — one Host row plus the browser module that owns the UI.
+- insert:
+    - id: session-share
+      name: '@local/dsh-session-share'

@@ -1,0 +1,17 @@
+# Dependencies (plugins in this repo have none, but keep the rule for local testing)
+node_modules/
+
+# DSH plugin-manager diagnostic output and profile leftovers
+.plugin-manager/
+*.log
+
+# Test / verification leftovers
+.verify-*/
+tmp/
+*.tmp
+
+# Editors and OS noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

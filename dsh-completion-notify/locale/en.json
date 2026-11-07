@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Task & approval notify",
+    "description": "The DSH host process pops an OS notification when a Session finishes its task or blocks on your approval or answer, titled with that Session — even while the page is covered or closed."
+  }
+}

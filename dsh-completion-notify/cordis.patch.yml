@@ -1,0 +1,5 @@
+# Completion Notify bundle: one row. The Host half is empty; the browser half
+# registers the sidebar bell and the Session-completion observer.
+- insert:
+    - id: completion-notify
+      name: '@local/dsh-completion-notify'

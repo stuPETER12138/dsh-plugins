@@ -1,0 +1,14 @@
+# Usage Stats bundle: one row. The Host half folds this machine's stored session
+# logs into token/cost figures and serves them over loopback-only JSON routes;
+# the browser half registers the left-sidebar entry and its dashboard panel.
+#
+# Tunables (all optional) live in `config`; nothing has to be set to use the panel:
+#   prices           USD per 1M tokens, keyed "provider/model" or bare "model";
+#                    an override merges per field over the shipped rate, and an
+#                    entry may carry flat rates or peak/offPeak blocks
+#   fallback         rates for any model the table does not name
+#   listIntervalMs   how often the open panel re-enumerates stored sessions
+- insert:
+    - id: usage-stats
+      name: '@local/dsh-usage-stats'
+      config: {}

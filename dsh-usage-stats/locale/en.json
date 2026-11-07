@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Usage Stats",
+    "description": "Token usage and estimated cost computed from this machine's real session logs."
+  }
+}

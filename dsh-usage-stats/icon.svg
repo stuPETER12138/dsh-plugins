@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="us-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1F6FEB"/>
+      <stop offset="1" stop-color="#123A7A"/>
+    </linearGradient>
+    <linearGradient id="us-bar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#8FE3C0"/>
+      <stop offset="1" stop-color="#E8FBF2"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#us-bg)"/>
+  <path d="M14 46h36" stroke="#BFD8FF" stroke-width="2.4" stroke-linecap="round" opacity="0.55"/>
+  <rect x="15.5" y="32" width="7" height="13" rx="2" fill="url(#us-bar)" opacity="0.75"/>
+  <rect x="26" y="25" width="7" height="20" rx="2" fill="url(#us-bar)" opacity="0.9"/>
+  <rect x="36.5" y="19" width="7" height="26" rx="2" fill="url(#us-bar)"/>
+  <path d="M15 27.5 24 22.5 32 25 47 13.5" fill="none" stroke="#FFD166" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="47" cy="13.5" r="3" fill="#FFD166"/>
+  <path d="M14.5 50.5c8.5-2.6 26-2.6 35 0" fill="none" stroke="#BFD8FF" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+</svg>

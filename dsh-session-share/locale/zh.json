@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "会话分享",
+    "description": "在当前会话中挑选要分享的消息，导出为 Markdown、图片或 PDF，不离开本机。"
+  }
+}
