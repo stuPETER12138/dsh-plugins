@@ -1,0 +1,246 @@
+{
+  "format": 1,
+  "title": {
+    "en": "stuPETER12138 DSH plugins",
+    "zh": "stuPETER12138 的 DSH 插件集"
+  },
+  "description": {
+    "en": "Personal DeepSeek Harness web plugins: notifications, session sharing, sticky notes, visual styles, and usage statistics.",
+    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、会话分享、便签墙、视觉风格与用量统计。"
+  },
+  "metadata": {
+    "categories": {
+      "assistant": {
+        "title": {
+          "en": "Assistant workflow",
+          "zh": "助手工作流"
+        }
+      },
+      "interface": {
+        "title": {
+          "en": "Interface",
+          "zh": "界面增强"
+        }
+      },
+      "insight": {
+        "title": {
+          "en": "Insights",
+          "zh": "数据洞察"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "@local/dsh-completion-notify",
+      "title": {
+        "en": "Task & approval notify",
+        "zh": "任务完成与等待确认通知"
+      },
+      "description": {
+        "en": "The DSH host process pops an OS notification when a Session finishes its task or blocks on your approval or answer, titled with that Session — even while the page is covered or closed.",
+        "zh": "会话跑完任务、或卡住等你授权/回答时，由 DSH 主进程弹出系统通知，标题写明是哪个会话；页面被覆盖或关闭也会提醒。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkNvbXBsZXRpb24gbm90aWZ5Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY24tYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjM0U3QkZBIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdBNUNGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTYiIGZpbGw9InVybCgjY24tYmcpIi8+CiAgPHBhdGggZD0iTTMyIDEyLjVjLTYuOSAwLTExLjkgNS40LTExLjkgMTIuM3Y4LjRsLTQgNi40Yy0xIDEuNi4xIDMuNiAyIDMuNmgyNy44YzEuOSAwIDMtMiAyLTMuNmwtNC02LjR2LTguNGMwLTYuOS01LTEyLjMtMTEuOS0xMi4zeiIgZmlsbD0iI0ZGRkZGRiIgb3BhY2l0eT0iMC45NiIvPgogIDxwYXRoIGQ9Ik0yNi42IDQ2LjRhNS40IDUuNCAwIDAgMCAxMC44IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIzLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC45NiIvPgogIDxwYXRoIGQ9Ik0yNi40IDI3LjZsMy43IDMuOSA3LjUtNy45IiBmaWxsPSJub25lIiBzdHJva2U9InVybCgjY24tYmcpIiBzdHJva2Utd2lkdGg9IjMuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-completion-notify",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-completion-notify"
+      },
+      "metadata": {
+        "category": "assistant",
+        "keywords": [
+          "notification",
+          "toast",
+          "session",
+          "approval",
+          "notify",
+          "任务通知",
+          "系统通知"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1794025375,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "417bb5c13439cbba9be2139a2c2e1706ba4c6e9d",
+            "path": "dsh-completion-notify"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@local/dsh-session-share",
+      "title": {
+        "en": "Session share",
+        "zh": "会话分享"
+      },
+      "description": {
+        "en": "Pick the messages worth sharing from the current conversation and export them as Markdown, an image, or a PDF, all on this machine.",
+        "zh": "在当前会话中挑选要分享的消息，导出为 Markdown、图片或 PDF，不离开本机。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlNlc3Npb24gc2hhcmUiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJzcy1iZyIgeDE9IjgiIHkxPSI2IiB4Mj0iNTYiIHkyPSI2MCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzQjgyRjYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEVBNUE0Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHJ4PSIxNSIgZmlsbD0idXJsKCNzcy1iZykiLz4KICA8cGF0aCBkPSJNMTUgMjEuNWMwLTIuNSAyLTQuNSA0LjUtNC41aDIwYzIuNSAwIDQuNSAyIDQuNSA0LjV2MTNjMCAyLjUtMiA0LjUtNC41IDQuNUgyNy41TDIxIDQ0di01aC0xLjVjLTIuNSAwLTQuNS0yLTQuNS00LjV2LTEzWiIgZmlsbD0iI0ZGRkZGRiIgZmlsbC1vcGFjaXR5PSIwLjk2Ii8+CiAgPHBhdGggZD0iTTIyIDIzLjVoMTZNMjIgMjguNWgxM00yMiAzMy41aDkiIHN0cm9rZT0iIzFENEVEOCIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik00NS41IDM1LjV2LTcuOG0wIDAtMy40IDMuNG0zLjQtMy40IDMuNCAzLjQiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIyLjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxyZWN0IHg9IjQwLjUiIHk9IjM5LjUiIHdpZHRoPSIxMiIgaGVpZ2h0PSIyLjgiIHJ4PSIxLjQiIGZpbGw9IiNGRkZGRkYiIGZpbGwtb3BhY2l0eT0iMC45Ii8+Cjwvc3ZnPgo=",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-session-share",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-session-share"
+      },
+      "metadata": {
+        "category": "assistant",
+        "keywords": [
+          "session",
+          "share",
+          "export",
+          "markdown",
+          "pdf",
+          "png",
+          "导出",
+          "分享"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794025375,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "417bb5c13439cbba9be2139a2c2e1706ba4c6e9d",
+            "path": "dsh-session-share"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@local/dsh-sticky-wall",
+      "title": {
+        "en": "Sticky Wall · 便签墙",
+        "zh": "便签墙 Sticky Wall"
+      },
+      "description": {
+        "en": "A sticky-note wall in the left sidebar: capture an idea the moment it arrives, pin the important ones, and find them again by search.",
+        "zh": "左侧栏里的便签墙：灵感来的一瞬间就能记下，重要的置顶，以后用搜索找回。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlN0aWNreSBXYWxsIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFwZXIiIHgxPSIxMCIgeTE9IjYiIHgyPSI1NCIgeTI9IjU4IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0Y3RDc3NCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNFOUI5NDkiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImZvbGQiIHgxPSI0MCIgeTE9IjQ0IiB4Mj0iNTYiIHkyPSI1OCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNEOEE2MkYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjQzA4RjFGIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cGF0aCBkPSJNMTQgN2gzMGE5IDkgMCAwIDEgOSA5djIyLjVhOSA5IDAgMCAxLTIuNjM2IDYuMzY0bC04LjUgOC41QTkgOSAwIDAgMSAzNS41IDU2SDE0YTcgNyAwIDAgMS03LTdWMTRhNyA3IDAgMCAxIDctN1oiIGZpbGw9InVybCgjcGFwZXIpIi8+CiAgPHBhdGggZD0iTTQ1LjUgNTQuNVY0NmE3IDcgMCAwIDEgNy03aDguNGE5IDkgMCAwIDEtMS45IDMuMmwtOC4zIDguM2E5IDkgMCAwIDEtNS4yIDRaIiBmaWxsPSJ1cmwoI2ZvbGQpIi8+CiAgPGcgc3Ryb2tlPSIjOEE2NDEwIiBzdHJva2Utd2lkdGg9IjMuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjg1Ij4KICAgIDxwYXRoIGQ9Ik0xOCAyMWgyMCIvPgogICAgPHBhdGggZD0iTTE4IDI5aDI0Ii8+CiAgICA8cGF0aCBkPSJNMTggMzdoMTUiLz4KICA8L2c+Cjwvc3ZnPgo=",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-sticky-wall",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-sticky-wall"
+      },
+      "metadata": {
+        "category": "interface",
+        "keywords": [
+          "sticky",
+          "notes",
+          "sidebar",
+          "todo",
+          "memo",
+          "便签",
+          "灵感"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1794025375,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "417bb5c13439cbba9be2139a2c2e1706ba4c6e9d",
+            "path": "dsh-sticky-wall"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@local/dsh-style-studio",
+      "title": {
+        "en": "Style Studio · 风格工作台",
+        "zh": "风格工作台 Style Studio"
+      },
+      "description": {
+        "en": "A \"Visual styles\" row under Settings → General → Appearance that reskins the whole DeepSeek Harness with one of five styles: Ink & Brush, Midnight Sky, Moss & Meadow, Pixel Arcade, and Graphite Mono. Each style adapts to light and dark appearance.",
+        "zh": "在「设置 → 通用设置 → 外观」下方的「视觉风格」一行中，一键为整个 DeepSeek Harness 切换五种视觉风格：水墨书画、深空极夜、苔原森野、像素街机、石墨黑白。风格随浅色/深色外观自动适配。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlN0eWxlIFN0dWRpbyI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InRpbGUiIHgxPSI2IiB5MT0iNCIgeDI9IjU4IiB5Mj0iNjAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMkEyNDFEIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE1MTIwRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTQiIGZpbGw9InVybCgjdGlsZSkiLz4KICA8cmVjdCB4PSIyLjUiIHk9IjIuNSIgd2lkdGg9IjU5IiBoZWlnaHQ9IjU5IiByeD0iMTMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBFN0Q1IiBzdHJva2Utb3BhY2l0eT0iMC4xOCIvPgogIDxnIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMTMgNDVWMzEiIHN0cm9rZT0iI0EzM0EyRSIgc3Ryb2tlLXdpZHRoPSI1LjQiLz4KICAgIDxwYXRoIGQ9Ik0yMiA0NVYyNSIgc3Ryb2tlPSIjNkFBOEZGIiBzdHJva2Utd2lkdGg9IjUuNCIvPgogICAgPHBhdGggZD0iTTMxIDQ1VjIwIiBzdHJva2U9IiM4RkJDNzQiIHN0cm9rZS13aWR0aD0iNS40Ii8+CiAgICA8cGF0aCBkPSJNNDAgNDVWMjciIHN0cm9rZT0iI0U5QTE1QyIgc3Ryb2tlLXdpZHRoPSI1LjQiLz4KICAgIDxwYXRoIGQ9Ik00OSA0NVYzNCIgc3Ryb2tlPSIjRUZFNkQ0IiBzdHJva2Utd2lkdGg9IjUuNCIvPgogIDwvZz4KICA8cGF0aCBkPSJNMTEgNTBoNDIiIHN0cm9rZT0iI0VGRTZENCIgc3Ryb2tlLW9wYWNpdHk9IjAuNCIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxyZWN0IHg9IjQ0LjUiIHk9IjExLjUiIHdpZHRoPSI5IiBoZWlnaHQ9IjkiIHJ4PSIyIiBmaWxsPSIjQTMzQTJFIi8+CiAgPHBhdGggZD0iTTQ3IDE2aDRNNDkgMTR2NCIgc3Ryb2tlPSIjRjdFRkUyIiBzdHJva2Utd2lkdGg9IjEuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utb3BhY2l0eT0iMC45Ii8+Cjwvc3ZnPgo=",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-style-studio",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-style-studio"
+      },
+      "metadata": {
+        "category": "interface",
+        "keywords": [
+          "theme",
+          "style",
+          "appearance",
+          "skin",
+          "dark",
+          "主题",
+          "风格"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.3.0",
+          "publishTimestamp": 1794025375,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "417bb5c13439cbba9be2139a2c2e1706ba4c6e9d",
+            "path": "dsh-style-studio"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@local/dsh-usage-stats",
+      "title": {
+        "en": "Usage Stats",
+        "zh": "用量统计 Usage Stats"
+      },
+      "description": {
+        "en": "Token usage and estimated cost computed from this machine's real session logs.",
+        "zh": "用本机真实会话日志统计 Token 消耗并估算成本。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0idXMtYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMUY2RkVCIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzEyM0E3QSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0idXMtYmFyIiB4MT0iMCIgeTE9IjEiIHgyPSIwIiB5Mj0iMCI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzhGRTNDMCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNFOEZCRjIiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9IjIiIHk9IjIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcng9IjE1IiBmaWxsPSJ1cmwoI3VzLWJnKSIvPgogIDxwYXRoIGQ9Ik0xNCA0NmgzNiIgc3Ryb2tlPSIjQkZEOEZGIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjU1Ii8+CiAgPHJlY3QgeD0iMTUuNSIgeT0iMzIiIHdpZHRoPSI3IiBoZWlnaHQ9IjEzIiByeD0iMiIgZmlsbD0idXJsKCN1cy1iYXIpIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPHJlY3QgeD0iMjYiIHk9IjI1IiB3aWR0aD0iNyIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9InVybCgjdXMtYmFyKSIgb3BhY2l0eT0iMC45Ii8+CiAgPHJlY3QgeD0iMzYuNSIgeT0iMTkiIHdpZHRoPSI3IiBoZWlnaHQ9IjI2IiByeD0iMiIgZmlsbD0idXJsKCN1cy1iYXIpIi8+CiAgPHBhdGggZD0iTTE1IDI3LjUgMjQgMjIuNSAzMiAyNSA0NyAxMy41IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkQxNjYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSI0NyIgY3k9IjEzLjUiIHI9IjMiIGZpbGw9IiNGRkQxNjYiLz4KICA8cGF0aCBkPSJNMTQuNSA1MC41YzguNS0yLjYgMjYtMi42IDM1IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0JGRDhGRiIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC40Ii8+Cjwvc3ZnPgo=",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-usage-stats",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-usage-stats"
+      },
+      "metadata": {
+        "category": "insight",
+        "keywords": [
+          "usage",
+          "tokens",
+          "cost",
+          "statistics",
+          "dashboard",
+          "用量",
+          "成本"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1794025375,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "417bb5c13439cbba9be2139a2c2e1706ba4c6e9d",
+            "path": "dsh-usage-stats"
+          }
+        }
+      ]
+    }
+  ]
+}
