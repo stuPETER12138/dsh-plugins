@@ -26,7 +26,7 @@ function check(name, condition, detail) {
 
 // ── fixture session ────────────────────────────────────────────────────────
 
-const header = { id: 'session-test-1', createdAt: 1_000, cwd: 'D:\\Project\\dsh-normal', title: '未命名会话' }
+const header = { id: 'session-test-1', createdAt: 1_000, cwd: 'D:\\workspace\\demo-project', title: '未命名会话' }
 
 const events = [
   { seq: 0, time: 1_000, type: 'session/title', data: { title: '测试会话' } },

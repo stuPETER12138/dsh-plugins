@@ -5,6 +5,25 @@
   "description": "OS notifications from the DSH host process when a Session finishes its task or blocks on your approval or answer: one switch under Settings -> General, every notification titled with its Session, and delivery keeps working while the page is covered or closed.",
   "type": "module",
   "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "stuPETER12138",
+    "url": "https://github.com/stuPETER12138"
+  },
+  "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-completion-notify",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stuPETER12138/dsh-plugins.git",
+    "directory": "dsh-completion-notify"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "notification",
+    "toast",
+    "session",
+    "approval"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

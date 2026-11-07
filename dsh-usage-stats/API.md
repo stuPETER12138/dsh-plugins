@@ -35,7 +35,7 @@ It selects the `range` block, and the `models` / `sessions` lists inside it;
     "restored": 217,              // summaries restored from the disk cache
     "cache": {                    // the durable summary cache (see README)
       "enabled": true,
-      "file": "C:\\Users\\WU\\.dsh\\cache\\dsh-usage-stats\\summaries.v5.json",
+      "file": "C:\\Users\\<you>\\.dsh\\cache\\dsh-usage-stats\\summaries.v5.json",
       "savedAt": 1793703479347,   // null until this process writes it
       "loadedAt": 1793703715325,  // null when this process started with no cache
       "note": "entries 212, restored 212", // human-readable load outcome
@@ -102,7 +102,7 @@ It selects the `range` block, and the `models` / `sessions` lists inside it;
     {
       "id": "session-dd713b48-46d1-4724-b9c6-564f85580ae9",
       "title": "中国科学院相关研究所院士",     // "" when the log has no title
-      "cwd": "D:\\Project\\dsh-normal",         // null when unknown
+      "cwd": "D:\\workspace\\demo-project",         // null when unknown
       "agentPreset": "standard",                 // null when unknown
       "origin": null,                            // "subagent" or null
       "parentSession": null,

@@ -1,34 +1,112 @@
 # 便签墙 · Sticky Wall
 
-带左侧栏入口的 DSH Web 插件：灵感来的一瞬间先贴到墙上，重要的置顶，以后用搜索找回。
+> 包名 `@local/dsh-sticky-wall` · 版本 1.1.0 · 已在 DSH Desktop 0.2.2-rc.1 上实测启用
 
-- 左侧栏「便签墙」行打开整页便签墙，输入框自动聚焦。
-- `⌘/Ctrl + Enter` 保存；置顶、搜索、六种便签纸颜色、双击编辑、复制。
-- 便签保存在本机（`localStorage`，键 `dsh.sticky-wall.notes.v1`），切换面板／刷新／重启都在。
-- 删除后 6 秒内可撤销。
-- 颜色全部取自 `--dsw-*` 主题 token，深色主题（`body[data-ds-dark-theme]`）下便签纸色、边框与投影单独调过。
+DSH Web 左侧栏里的便签墙：灵感来的一瞬间先贴上去，重要的置顶，以后用搜索找回。便签只保存在本机浏览器里，随开随用。
 
-## 文件
+## 功能
+
+- **左侧栏入口**：侧栏「便签墙」一行，点开是整页便签墙，输入框自动聚焦，可以立刻开始写。
+- **快速记录**：写完按 `⌘/Ctrl + Enter` 保存；空内容时保存按钮禁用；单条上限 4000 字符。
+- **六种纸色**：黄、粉、蓝、绿、紫、橙；输入框选中的颜色会被记住，下一次接着用。
+- **置顶与排序**：置顶的便签排在最前，其余按最近更新排序（编辑或置顶都会刷新更新时间）。
+- **搜索**：按正文做大小写不敏感的子串搜索，带一键清空；没有结果时有单独的空状态。
+- **编辑**：双击便签正文或点铅笔按钮进入编辑，可改文字与纸色；`Ctrl + Enter` 保存，`Esc` 取消。
+- **复制与删除**：一键把便签正文复制到剪贴板；删除后 6 秒内可在底部提示条上撤销。
+- **多窗口同步**：同一浏览器里另一个窗口改了便签，本窗口通过 `storage` 事件自动刷新。
+- **主题跟随**：布局、边框、文字全部使用 `--dsw-*` 主题 token，深色主题单独调整便签纸色、边框和投影，切换浅色 / 深色自动适配。
+- **中英界面**：文案随 DSH 界面语言切换。
+
+## 使用
+
+1. 左侧栏点「便签墙」打开整页便签墙；顶部显示便签总数，输入框自动获得焦点。
+2. 在输入框写内容，选一个纸色，按 `⌘/Ctrl + Enter` 或点「保存便签」。
+3. 便签按「置顶 → 最近更新」排列；鼠标悬停在便签上出现置顶、复制、编辑、删除按钮（触屏设备上常显）。
+4. 用右上角搜索框筛选，右侧的 × 可以一键清空。
+5. 删除会立即生效，底部提示条保留 6 秒撤销机会；刷新页面后便签仍然在。
+
+## 安装
+
+完整的安装、升级与卸载步骤见 [docs/INSTALL.md](../docs/INSTALL.md)；**每个插件单独安装**。本插件常用：
+
+1. **方式 B：从本地文件夹安装（桌面端推荐、可离线）**：DSH Desktop 左侧栏「插件」→ 右上角「添加插件」→ 填本插件文件夹的**绝对路径**（本机为 `D:\github\dsh-plugins\dsh-sticky-wall`）→「安装」→「立即启用」。
+2. **方式 A：从插件索引安装**：插件页「发现」标签 →「添加索引源」→ 填 `https://raw.githubusercontent.com/stuPETER12138/dsh-plugins/main/index.json` → 找到本插件 →「安装」→「立即启用」。索引方式**需要本机能访问 GitHub**。
+3. **方式 D：命令行（`dsh` CLI profile）**：`dsh plugin --profile <profile> add "link:<本插件绝对路径>"`。DSH 0.2.2 会自动把它写进该 profile 的 `dsh.profile.bundles`，重启 profile 后生效；Desktop 的 `desktop` profile 请用方式 A / B，不要从外部 CLI 改。
+
+也可以直接让 DSH 里的 Agent 安装（方式 C），效果与方式 B 相同。
+
+安装时必须注意：路径必须是**绝对路径**；**每个插件独立安装**，插件之间没有依赖；桌面端请走**插件页**，不要手改 profile 文件。
+
+其他插件与仓库总览见[根 README](../README.md)。
+
+## 验证生效
+
+- 插件页里本插件显示为已启用，没有「不可用」标记；
+- 左侧栏出现「便签墙」入口，点击后看到标题、输入框与「0 条便签」；
+- 写一条便签并保存，出现「已保存」提示和便签卡片；
+- 刷新页面或重启 DSH，便签仍在。
+
+## 兼容性
+
+- **实测环境**：DSH Desktop 0.2.2-rc.1、Windows 11、Node 24.21.0 / pnpm 11.28.5；插件在本机已启用。
+- **运行位置**：纯浏览器侧插件（`dsh.client.platform = web`），依赖客户端模块系统 `window.__ModuleLoader__`、`slots`（`sidebar.panellist`、`main`）与 `locale`；Host 半边的 `index.js` 是空实现，只为让 Loader 行存在。
+- **浏览器能力**：`localStorage`、`navigator.clipboard`（需要安全上下文，被拒绝时提示「浏览器不允许访问剪贴板」）、`storage` 事件与 `color-mix()`。DSH Desktop 自带的 Electron 满足这些要求。
+- **平台**：代码里没有平台分支，理论上 Windows / macOS / Linux 的桌面端与浏览器端表现一致；实际只在 Windows 11 上测试过。
+
+## 数据与隐私
+
+- **localStorage 键**：
+  - `dsh.sticky-wall.notes.v1`：便签数组，每条 `{ id, text, color, pinned, createdAt, updatedAt }`，`text` 最长 4000 字符；
+  - `dsh.sticky-wall.prefs.v1`：`{ color }`，记录输入框上次选的纸色。
+- **容错读取**：损坏或旧格式的条目会被逐条校正，没有正文的条目直接丢弃；颜色不合法时回退成黄色。
+- **不联网**：没有网络请求，不与 Host 通信，没有遥测，也不写任何本机文件。
+- **剪贴板**：只有点击「复制」时才写入便签正文，不读取剪贴板。
+- **数据位置**：存在当前浏览器 profile 的 localStorage 里；换机器、换 profile、清浏览器数据都不会迁移，需要时请手动复制正文备份。
+
+## 文件结构
 
 | 文件 | 作用 |
 | --- | --- |
-| `package.json` | bundle 声明（`dsh.bundle.patch`、`dsh.client`） |
-| `cordis.patch.yml` | 插入一行 `sticky-wall` 插件行 |
-| `index.js` | Host 半侧：空 `apply`，只为让 Loader 行存在 |
-| `client.js` | 浏览器半侧：`sidebar.panellist` + `main` 两个席位，含页面、样式、本地存储 |
-| `locale/{en,zh}.json` | 插件管理页的标题与描述 |
-| `icon.svg` | 插件行图标 |
+| `package.json` | bundle 声明：`dsh.bundle.patch`、`dsh.client.platform = web`、`immediately: true` |
+| `cordis.patch.yml` | 向 Loader 插入一行 `sticky-wall` 插件行 |
+| `index.js` | Host 半边：空的 `apply()`，仅让 Loader 行存在（所有行为在浏览器侧） |
+| `client.js` | 浏览器半边：侧栏入口、整页便签墙、样式与 localStorage 读写 |
+| `locale/zh.json`、`locale/en.json` | 插件管理页显示的标题与描述 |
+| `icon.svg` | 插件图标 |
+| `README.md` | 本文档 |
 
-## 安装 / 卸载
+## 工作原理
 
-```sh
-dsh plugin --profile desktop add link:<本目录绝对路径>
-```
+1. **两个席位**：`sidebar.panellist` 注册 `id: sticky-wall`、`order: 20` 的侧栏行，渲染便签图标；`main` 注册 `key: sticky-wall` 的整页面板，渲染便签墙。
+2. **状态**：`StickyWallPage` 用 `useState` 持有便签列表、输入框纸色、搜索词、草稿和编辑态；`notes` / `color` 变化时写入 localStorage。
+3. **读取与校正**：进入页面时 `loadState()` 读两个键，`normalizeNote()` 逐条校正字段；写回时整体序列化成数组。
+4. **排序与搜索**：`visibleNotes()` 先按搜索词过滤，再按「置顶优先、同组内 `updatedAt` 降序」排序。
+5. **撤销**：删除时把整条便签放进底部提示条的撤销回调，6 秒内点击可原样放回列表最前面；提示条超时后不再可撤销。
+6. **多窗口**：监听 `window` 的 `storage` 事件，键为便签键时重新 `loadState()`。
+7. **样式**：插件向 `document.head` 注入带 `data-dsh-plugin="sticky-wall"` 的 `<style>`，颜色取自 `--dsw-*` 主题 token 或与固定纸色的 `color-mix()`；深色规则挂在 `body[data-ds-dark-theme]` 下。
 
-再把 `@local/dsh-sticky-wall` 追加到 profile `package.json` 的 `dsh.profile.bundles`（启用 HMR 时保存即生效）。卸载时从该列表移除包名，再执行：
+## 卸载与数据清理
 
-```sh
-dsh plugin --profile desktop remove @local/dsh-sticky-wall
-```
+1. 在插件页卸载本插件（或按 [INSTALL.md](../docs/INSTALL.md) 的 CLI 方式移除 `@local/dsh-sticky-wall`）。卸载**不会删除便签**，数据在浏览器里，不在插件目录。
+2. 要彻底清理数据，在 DSH 开发者工具里执行：
 
-便签数据不在插件目录里，卸载不会删除。
+   ```js
+   localStorage.removeItem('dsh.sticky-wall.notes.v1')
+   localStorage.removeItem('dsh.sticky-wall.prefs.v1')
+   ```
+
+3. 先卸载插件再清理也可以；重新安装插件后旧便签仍在，直到你删除这两个键。
+
+## 已知限制
+
+- 数据只存在当前浏览器 profile，**不跨设备同步**；没有导出 / 导入界面，需要搬移时请手动复制正文。
+- 撤销窗口只有 6 秒；提示条消失或页面刷新后删除即不可恢复。
+- 只有纯文本：没有富文本、标签、归档、拖拽排序或分组，单条上限 4000 字符。
+- 搜索是大小写不敏感的简单子串匹配，不支持分词与正则。
+- 剪贴板依赖安全上下文与浏览器权限，被拒绝时只能提示失败。
+- 便签纸色是固定纸色与主题底色的混合色；在极端自定义主题下对比度可能偏离预期。
+- 便签数量很多时一次性渲染全部卡片，未做虚拟滚动。
+
+## 许可证
+
+MIT License。可自由使用、修改与分发，请保留版权声明；插件按「现状」提供，不附带任何明示或暗示的担保。完整文本见仓库根目录的 [LICENSE](../LICENSE)。

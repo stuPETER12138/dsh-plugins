@@ -5,6 +5,27 @@
   "description": "Pick any part of the current conversation and share it as Markdown, an image, or a PDF.",
   "type": "module",
   "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "stuPETER12138",
+    "url": "https://github.com/stuPETER12138"
+  },
+  "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-session-share",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stuPETER12138/dsh-plugins.git",
+    "directory": "dsh-session-share"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "session",
+    "share",
+    "export",
+    "markdown",
+    "pdf",
+    "png"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

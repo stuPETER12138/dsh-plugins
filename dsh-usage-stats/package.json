@@ -5,6 +5,26 @@
   "description": "Token usage and estimated cost dashboard in the DSH Web sidebar, computed from this machine's real session logs.",
   "type": "module",
   "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "stuPETER12138",
+    "url": "https://github.com/stuPETER12138"
+  },
+  "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-usage-stats",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stuPETER12138/dsh-plugins.git",
+    "directory": "dsh-usage-stats"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "tokens",
+    "cost",
+    "usage",
+    "statistics",
+    "dashboard"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

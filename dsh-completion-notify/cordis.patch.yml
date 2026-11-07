@@ -1,5 +1,6 @@
-# Completion Notify bundle: one row. The Host half is empty; the browser half
-# registers the sidebar bell and the Session-completion observer.
+# Completion Notify bundle: one row. The Host half watches Session events and
+# spawns the OS notifier; the browser half draws the Settings switch and reports
+# the window/session focus.
 - insert:
     - id: completion-notify
       name: '@local/dsh-completion-notify'

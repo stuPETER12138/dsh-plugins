@@ -4,7 +4,7 @@
  * Everything that matters happens here: the browser cannot be trusted to report
  * a finished turn (it may be hidden, occluded, or closed), and an Electron
  * renderer's `Notification` is dropped in exactly those states. So the Host
- * subscribes to the Session log and spawns a detached OS notifier:
+ * subscribes to the Session log and spawns a hidden OS notifier process:
  *
  *   turn/end (completed) → 「会话名」任务完成
  *   turn/end (error)     → 「会话名」任务出错
@@ -63,7 +63,7 @@ function psQuote(value) {
   return `'${String(value).replace(/'/g, "''")}'`
 }
 
-/** The detached helper for this platform, or undefined when there is none. */
+/** The hidden notifier helper for this platform, or undefined when there is none. */
 function notifierCommand(title, body) {
   if (process.platform === 'win32') {
     const xml =

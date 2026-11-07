@@ -5,6 +5,25 @@
   "description": "A sticky-note wall in the DSH Web sidebar: capture inspiration at any time.",
   "type": "module",
   "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "stuPETER12138",
+    "url": "https://github.com/stuPETER12138"
+  },
+  "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-sticky-wall",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stuPETER12138/dsh-plugins.git",
+    "directory": "dsh-sticky-wall"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "sticky-notes",
+    "notes",
+    "sidebar",
+    "memo"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -12,6 +31,14 @@
     "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

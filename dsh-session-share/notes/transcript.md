@@ -1,5 +1,7 @@
 # Transcript folder — discovery notes (`src/transcript.js`)
 
+> 历史设计笔记：记录当时的调研与实现思路，部分细节可能已随代码演进变化。以 README 与 `src/transcript.js` 的实际代码为准。
+
 Owner: transcript-scout (task-1). Pure host-side fold of one DSH session log into the
 share payload consumed by the browser half. No Node imports, no I/O, no clock.
 
@@ -12,7 +14,7 @@ share payload consumed by the browser half. No Node imports, no I/O, no clock.
   `D:\Software\DeepseekHarness\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-session\lib\index.js`
   — `KNOWN_SESSION_EVENT_TYPES` (lines 79–142), `SURFACE_EVENT_TYPES` (157–163),
   `isAppendSurfaceEvent` doc comment (184–194).
-- Live logs: 231 files under `C:\Users\WU\.dsh\sessions\<project>\<session>\session.vN.jsonl.zstd`.
+- Live logs: 231 files under `$DSH_HOME\sessions\<project>\<session>\session.vN.jsonl.zstd`.
   12 newest logs were scanned for event shapes; 40 for `surfaceOp` variants.
   Files are multi-frame zstd JSONL: first line = session header, then one event per line.
 
@@ -36,7 +38,7 @@ Deliberately ignored (all seen live): `session/title-llm-request`, `assistant/at
 Header line (v4, durable log; note: **no `title` field**):
 
 ```json
-{"type":"session","version":4,"id":"session-a2a9d49a-8128-4d8f-8e02-e5ae177a5c06","createdAt":1793981816706,"cwd":"D:\\Project\\dsh-normal","isSeeded":false,"delegationDepth":0,"agentPreset":"cordis"}
+{"type":"session","version":4,"id":"session-a2a9d49a-8128-4d8f-8e02-e5ae177a5c06","createdAt":1793981816706,"cwd":"D:\\workspace\\demo-project","isSeeded":false,"delegationDepth":0,"agentPreset":"cordis"}
 ```
 
 ## Evidence samples (trimmed from real logs; `time`/`usage`/`stream`/`replayState` cut for length)
@@ -146,7 +148,7 @@ createdAt, updatedAt, model } }`.
 `tools/test-transcript.mjs`, run from the plugin directory with the bundled Node:
 
 ```powershell
-& 'C:\Users\WU\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' tools/test-transcript.mjs
+node tools/test-transcript.mjs
 ```
 
 It asserts the synthetic fixture above (order, kinds, text/newlines, images, tool grouping and

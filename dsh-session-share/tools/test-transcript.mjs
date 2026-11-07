@@ -63,7 +63,7 @@ const HEADER = {
   version: 4,
   id: 'session-fixture-0001',
   createdAt: 1000,
-  cwd: 'D:\\Project\\dsh-normal',
+  cwd: 'D:\\workspace\\demo-project',
   isSeeded: false,
   agentPreset: 'cordis',
 }
@@ -239,7 +239,7 @@ check('fixture: session metadata', () => {
   const { session } = assembleTranscript(HEADER, EVENTS)
   assert.equal(session.id, 'session-fixture-0001')
   assert.equal(session.title, '最终标题')
-  assert.equal(session.cwd, 'D:\\Project\\dsh-normal')
+  assert.equal(session.cwd, 'D:\\workspace\\demo-project')
   assert.equal(session.createdAt, 1000)
   assert.equal(session.updatedAt, 1012)
   assert.equal(session.model, 'm-test-2')

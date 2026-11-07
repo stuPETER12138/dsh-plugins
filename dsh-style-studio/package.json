@@ -5,6 +5,25 @@
   "description": "Style Studio: a Visual styles row in Settings → General with five application-wide visual styles.",
   "type": "module",
   "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "stuPETER12138",
+    "url": "https://github.com/stuPETER12138"
+  },
+  "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-style-studio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stuPETER12138/dsh-plugins.git",
+    "directory": "dsh-style-studio"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "theme",
+    "style",
+    "appearance",
+    "dark-mode"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

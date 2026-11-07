@@ -1,5 +1,7 @@
 # DSH Session Share — browser export core
 
+> 历史设计笔记：记录当时的实现思路，部分结论可能已随代码演进变化（例如图片内嵌与表格排版后来已实现）。以 README 与 `src/export-core.js` 的实际代码为准。
+
 `src/export-core.js` is a dependency-free browser chunk. `client.js` inlines its
 text inside the plugin factory, so the file declares exactly one top-level
 symbol: `function createExportCore()`. It never touches `document`, `canvas`,
@@ -133,7 +135,7 @@ the URL from a `setTimeout` (~4 s).
 
 ```powershell
 cd plugins\dsh-session-share
-& 'C:\Users\WU\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' tools\test-export-core.mjs
+node tools\test-export-core.mjs
 ```
 
 The test stubs `document`/canvas/`Blob`/`URL`, evaluates the chunk with

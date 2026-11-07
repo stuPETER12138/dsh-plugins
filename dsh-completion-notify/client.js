@@ -2,7 +2,7 @@
  * Completion Notify — the browser half of `@local/dsh-completion-notify`.
  *
  * Detection and delivery live in the Host half: it watches every Session log
- * event and spawns a detached OS notifier, so a finished turn still reaches the
+ * event and spawns a hidden OS notifier process, so a finished turn still reaches the
  * user when this page is covered, minimized, or closed.
  *
  * This half only draws the preference row in Settings → General and reports the
