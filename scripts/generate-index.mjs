@@ -54,7 +54,7 @@ const PLUGINS = [
   {
     dir: 'dsh-session-share',
     category: 'assistant',
-    keywords: ['session', 'share', 'export', 'markdown', 'pdf', 'png', '导出', '分享'],
+    keywords: ['session', 'share', 'export', 'markdown', 'pdf', 'png', 'latex', 'math', '导出', '分享', '公式'],
   },
   {
     dir: 'dsh-sticky-wall',

@@ -1,6 +1,9 @@
 # DSH Session Share — browser export core
 
 > 历史设计笔记：记录当时的实现思路，部分结论可能已随代码演进变化（例如图片内嵌与表格排版后来已实现）。以 README 与 `src/export-core.js` 的实际代码为准。
+>
+> 0.2.0 起新增 LaTeX 公式：分隔符解析、公式预栅格化（`src/latex.js`）与行内原子盒子排版
+> 都已并入本引擎，详见 [latex.md](latex.md)。
 
 `src/export-core.js` is a dependency-free browser chunk. `client.js` inlines its
 text inside the plugin factory, so the file declares exactly one top-level
@@ -89,6 +92,12 @@ the URL from a `setTimeout` (~4 s).
   (rects and text runs) in CSS px / PDF points. `renderImage` paints them into
   one tall canvas; `renderPdf` slices them at op boundaries into pages, so a
   line is never cut in half at a page break. Both share the same styles.
+- LaTeX math is pre-rasterised before layout (`loadMathRasters` → `mode.math`
+  map) and laid out as atomic inline "boxes" with width/ascent/descent; a line
+  containing a formula grows vertically while its text baseline stays put. Text
+  and its formula images share an op `group`, so `paginateOps` never splits a
+  line across PDF pages. Display math (`$$` / `\[` / ```` ```math ````) becomes a
+  centred image block. A missing raster falls back to the raw TeX source.
 - Markdown subset for canvas: fenced code blocks, `#`..`######` headings,
   bullet/numbered lists, blockquotes, horizontal rules, paragraphs, and pipe
   tables. Tables get proportional column widths fitted to the content width,
@@ -123,10 +132,13 @@ the URL from a `setTimeout` (~4 s).
 - PDF: content is raster, not selectable text (by design of the spec). A very
   long session produces one JPEG per page; pages are rendered sequentially and
   released immediately to bound memory.
-- Item images are not embedded in PNG/PDF (only counted); markdown keeps the
-  original markdown image syntax.
-- Table rendering is monospace preformatted text; wide tables wrap by
-  character.
+- Item images are embedded in PNG/PDF when the Host resolved their bytes
+  (`imageRefs` + `view.attachments`); a missing/undecodable image is skipped and
+  only counted. Markdown keeps the original markdown image syntax.
+- Table rendering uses the inline layout engine (wrapped cell text, proportional
+  columns, header shading); formula boxes work inside cells too.
+- Formula bitmaps are raster, not vector (same as the PDF pages themselves); an
+  unsupported TeX command is shown as plain text rather than failing the export.
 - The engine is synchronous in markdown export and promise-based in image/PDF
   export; it does not read the DOM, so it can also be unit-tested in node
   (`tools/test-export-core.mjs`).

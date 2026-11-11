@@ -20,6 +20,8 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const enginePath = join(here, '..', 'src', 'export-core.js');
 const source = readFileSync(enginePath, 'utf8');
+const latexPath = join(here, '..', 'src', 'latex.js');
+const latexSource = readFileSync(latexPath, 'utf8');
 
 let passed = 0;
 let failed = 0;
@@ -451,8 +453,11 @@ function makeImageSampleView() {
 async function main() {
   check('core: chunk has no import/export statements', !/^\s*(import|export)\s/m.test(source));
   check('core: defines top-level function createExportCore()', /^function createExportCore\(\)/m.test(source));
+  check('latex: chunk has no import/export statements', !/^\s*(import|export)\s/m.test(latexSource));
+  check('latex: defines top-level function createLatexEngine()', /^function createLatexEngine\(\)/m.test(latexSource));
 
-  const factory = new Function('document', 'Blob', 'URL', 'setTimeout', source + '\nreturn createExportCore;');
+  const factory = new Function('document', 'Blob', 'URL', 'setTimeout',
+    latexSource + '\n' + source + '\nreturn createExportCore;');
 
   // (1) Evaluating the chunk must not touch the DOM.
   let topLevelOk = false;
@@ -502,6 +507,83 @@ async function main() {
   check('markdown: empty view', emptyMd.startsWith('# 空会话') && emptyMd.includes('— 由 DSH 会话分享导出'));
   const bareMd = core.serializeMarkdown({ items: [{ kind: 'user', text: '你好' }] });
   check('markdown: fallback title', bareMd.startsWith('# 会话分享'));
+
+  // (2b) LaTeX parsing hooks (inline extraction + display blocks).
+  const testApi = core.__test;
+  check('math: test hooks exposed', !!testApi &&
+    typeof testApi.parseInline === 'function' &&
+    typeof testApi.parseMarkdown === 'function' &&
+    typeof testApi.collectMathSources === 'function');
+
+  function mathSpans(spans) {
+    return spans.filter((span) => span && span.math);
+  }
+
+  const inlineMath = testApi.parseInline('应力 $\\sigma = \\frac{F}{A}$ 与 \\(E=mc^2\\)。');
+  const inlineMathSpans = mathSpans(inlineMath);
+  check('math: $...$ and \\(...\\) extracted as math spans', inlineMathSpans.length === 2,
+    JSON.stringify(inlineMathSpans.map((span) => span.math.tex)));
+  check('math: inline TeX keeps its content',
+    inlineMathSpans.length === 2 && inlineMathSpans[0].math.tex === '\\sigma = \\frac{F}{A}' &&
+    inlineMathSpans[1].math.tex === 'E=mc^2',
+    JSON.stringify(inlineMathSpans.map((span) => span.math.tex)));
+  check('math: text around inline math is preserved',
+    inlineMath.some((span) => span.text && span.text.indexOf('应力') >= 0) &&
+    inlineMath.some((span) => span.text && span.text.indexOf('与') >= 0));
+  check('math: code spans never open math',
+    mathSpans(testApi.parseInline('`$x$`')).length === 0);
+  check('math: escaped dollars stay literal',
+    mathSpans(testApi.parseInline('\\$5 和 \\$6')).length === 0 &&
+    testApi.parseInline('\\$5 和 \\$6').map((span) => span.text || '').join('').indexOf('$5 和 $6') >= 0);
+  check('math: mid-line $$...$$ is inline math (DSH parity)',
+    mathSpans(testApi.parseInline('x $$y$$ z')).length === 1 &&
+    mathSpans(testApi.parseInline('x $$y$$ z'))[0].math.tex === 'y');
+  check('math: currency-like text matches the DSH tokenizer',
+    mathSpans(testApi.parseInline('$5 and $10 元')).length === 1 &&
+    mathSpans(testApi.parseInline('$5 and $10 元'))[0].math.tex === '5 and ');
+  check('math: math inside bold keeps the bold flag',
+    mathSpans(testApi.parseInline('**bold $x$**')).length === 1 &&
+    mathSpans(testApi.parseInline('**bold $x$**'))[0].bold === true);
+
+  function mathBlockOf(markdown) {
+    return testApi.parseMarkdown(markdown).find((block) => block.type === 'math');
+  }
+  check('math: multi-line $$ display block',
+    !!mathBlockOf('$$\nx^2\n$$') && mathBlockOf('$$\nx^2\n$$').tex === 'x^2' &&
+    mathBlockOf('$$\nx^2\n$$').display === true);
+  check('math: same-line $$ display block', !!mathBlockOf('$$a$$') && mathBlockOf('$$a$$').tex === 'a');
+  check('math: \\[...\\] display block',
+    !!mathBlockOf('\\[\n\\frac{a}{b}\n\\]') && mathBlockOf('\\[\n\\frac{a}{b}\n\\]').tex === '\\frac{a}{b}');
+  check('math: same-line \\[...\\] display block',
+    !!mathBlockOf('\\[ a \\]') && mathBlockOf('\\[ a \\]').tex.trim() === 'a');
+  check('math: ```math fence becomes display math',
+    !!mathBlockOf('```math\n\\alpha\n```') && mathBlockOf('```math\n\\alpha\n```').tex === '\\alpha');
+  check('math: ```latex fence stays a code block',
+    testApi.parseMarkdown('```latex\n\\alpha\n```').some((block) => block.type === 'code'));
+  check('math: trailing-dollars line is not display math',
+    testApi.parseMarkdown('$$a$$$').every((block) => block.type !== 'math'));
+  check('math: unterminated $$ is not display math',
+    testApi.parseMarkdown('$$\\nunterminated').every((block) => block.type !== 'math'));
+
+  const sourcesView = {
+    session: { title: 'sources' },
+    items: [
+      { kind: 'user', text: '行内 $x^2$ 和 \\(\\alpha\\)' },
+      { kind: 'assistant', text: '$$\\int_0^1 x\\,dx$$' },
+      { kind: 'assistant', text: '- 列表 $E=mc^2$' },
+      { kind: 'assistant', text: '| A | B |\n| --- | --- |\n| $F$ | 2 |' }
+    ]
+  };
+  const collected = testApi.collectMathSources(sourcesView);
+  check('math: collectMathSources finds inline, display, list and table math',
+    collected.length === 5, 'found=' + collected.length + ' ' + JSON.stringify(collected.map((f) => f.tex)));
+  check('math: collectMathSources marks display formulas',
+    collected.filter((formula) => formula.display).length === 1,
+    JSON.stringify(collected.filter((formula) => formula.display).map((f) => f.tex)));
+  check('math: collectMathSources de-duplicates equal formulas',
+    testApi.collectMathSources({
+      items: [{ text: '$x$ 和 $x$' }, { text: '$x$' }]
+    }).length === 1);
 
   // (3) PNG export.
   const image = await core.renderImage(sample);
@@ -573,6 +655,113 @@ async function main() {
   brokenView.attachments = {};
   const brokenPng = await core.renderImage(brokenView);
   check('image: missing attachment still exports', brokenPng.blob instanceof FakeBlob && brokenPng.width === 1800);
+
+  // (5b) LaTeX export: with a prepared raster map and the raw-TeX fallback.
+  function makeFakeMathMap(formulas) {
+    const map = new Map();
+    for (const formula of formulas) {
+      map.set(formula.key, {
+        canvas: { fake: 'math-canvas' }, cssW: 90, cssH: 30,
+        ascent: 22, descent: 8, pad: 6, baseFont: 48
+      });
+    }
+    return map;
+  }
+
+  const mathView = {
+    session: { id: 'math', title: '公式测试', cwd: '/tmp/math', updatedAt: NOW, model: 'deepseek-v4.1-flash' },
+    items: [
+      {
+        id: 'math-1', kind: 'user', seq: 1, time: NOW - 9000,
+        text: '帮我看看 $\\sigma = \\frac{F}{A}$ 和 \\(E=mc^2\\)。'
+      },
+      {
+        id: 'math-2', kind: 'assistant', seq: 2, time: NOW - 8000, model: 'deepseek-v4.1-flash',
+        text: '推导如下：\n\n$$\\int_{0}^{1} x^{2}\\,dx = \\frac{1}{3}$$\n\n' +
+          '- 列表公式 $\\sqrt{x^2+y^2}\\le R$\n- 第二项 $\\alpha+\\beta$\n\n' +
+          '| 指标 | 公式 |\n| --- | --- |\n| 应力 | $\\sigma$ |\n| 能量 | $E=mc^2$ |\n\n' +
+          '```math\n\\begin{aligned}\n\\dot{x} &= Ax + Bu \\\\\ny &= Cx\n\\end{aligned}\n```'
+      }
+    ]
+  };
+  const mathFormulas = testApi.collectMathSources(mathView);
+  check('math: export view collects formulas (incl. display)',
+    mathFormulas.length >= 4 && mathFormulas.some((formula) => formula.display),
+    'found=' + mathFormulas.length + ' display=' + mathFormulas.filter((f) => f.display).length);
+
+  const mathPng = await core.renderImage(mathView, { mathRasters: makeFakeMathMap(mathFormulas) });
+  check('image: LaTeX view exports a PNG (2x)',
+    mathPng.blob instanceof FakeBlob && mathPng.blob.size > 0 &&
+    mathPng.width === 1800 && mathPng.height > 300,
+    'width=' + mathPng.width + ' height=' + mathPng.height);
+
+  const mathPdf = await core.renderPdf(mathView, { mathRasters: makeFakeMathMap(mathFormulas) });
+  check('pdf: LaTeX view has pages', mathPdf.pages >= 1, 'pages=' + mathPdf.pages);
+  const mathPdfReport = inspectPdf(await mathPdf.blob.text());
+  check('pdf: LaTeX view structure valid', mathPdfReport.problems.length === 0,
+    mathPdfReport.problems.join('; '));
+
+  const rawLaTeXMarkdown = core.serializeMarkdown(mathView);
+  check('markdown: LaTeX source preserved verbatim',
+    rawLaTeXMarkdown.includes('\\sigma = \\frac{F}{A}') &&
+    rawLaTeXMarkdown.includes('$$') &&
+    rawLaTeXMarkdown.includes('\\begin{aligned}'));
+
+  // Without a DOM layout engine the raster map stays empty; the export must
+  // fall back to the raw TeX instead of failing.
+  const fallbackPng = await core.renderImage(mathView);
+  check('image: LaTeX view exports when rasterisation is unavailable',
+    fallbackPng.blob instanceof FakeBlob && fallbackPng.width === 1800);
+  const fallbackPdf = await core.renderPdf(mathView);
+  check('pdf: raw-TeX fallback structure valid',
+    inspectPdf(await fallbackPdf.blob.text()).problems.length === 0);
+  check('image: raw-TeX fallback keeps the source visible in the PNG',
+    fallbackPng.height !== mathPng.height || fallbackPng.blob.size !== mathPng.blob.size);
+
+  // A formula wider than the content width must be scaled down, not break the
+  // layout or push the PNG over its pixel limits.
+  const wideView = {
+    session: { title: 'wide' },
+    items: [{
+      kind: 'assistant', seq: 1,
+      text: '超长公式：$\\sum_{i=1}^{1000} \\frac{a_i+b_i}{c_i+d_i}$ 结束。'
+    }]
+  };
+  const wideFormulas = testApi.collectMathSources(wideView);
+  const wideMap = new Map();
+  for (const formula of wideFormulas) {
+    wideMap.set(formula.key, {
+      canvas: { fake: 'wide' }, cssW: 3000, cssH: 120,
+      ascent: 90, descent: 30, pad: 6, baseFont: 48
+    });
+  }
+  const widePng = await core.renderImage(wideView, { mathRasters: wideMap });
+  check('image: oversized inline formula is scaled into the card',
+    widePng.blob instanceof FakeBlob && widePng.width === 1800);
+
+  // Many math-bearing lines must still paginate correctly.
+  const tallMathItems = [];
+  for (let i = 0; i < 30; i += 1) {
+    tallMathItems.push({
+      id: 'tm-' + i, kind: i % 2 ? 'assistant' : 'user', seq: i + 1, time: NOW - i * 1000,
+      text: '第 ' + (i + 1) + ' 条：$\\frac{a_{' + i + '}}{b_{' + i + '}}$ 与 $\\sqrt{x^{2}+y^{2}}$ 以及 ' +
+        '一段普通中文内容用于撑高。\n\n$$\\sum_{k=1}^{n} k^{2} = \\frac{n(n+1)(2n+1)}{6}$$'
+    });
+  }
+  const tallMathView = {
+    session: { id: 'tall-math', title: '公式分页测试', updatedAt: NOW, model: 'deepseek-v4.1-flash' },
+    items: tallMathItems
+  };
+  const tallMathMap = makeFakeMathMap(testApi.collectMathSources(tallMathView));
+  const tallMathPdf = await core.renderPdf(tallMathView, { mathRasters: tallMathMap });
+  check('pdf: math-heavy view paginates', tallMathPdf.pages > 1, 'pages=' + tallMathPdf.pages);
+  const tallMathReport = inspectPdf(await tallMathPdf.blob.text());
+  check('pdf: math-heavy pagination structure valid',
+    tallMathReport.problems.length === 0 && tallMathReport.pageObjects === tallMathPdf.pages,
+    tallMathReport.problems.join('; '));
+  check('image: all canvases cleaned after LaTeX exports',
+    documentStub.canvases.length > 0 &&
+    documentStub.canvases.every((canvas) => canvas.width === 0 && canvas.height === 0));
 
   // (6) Download helper.
   const createdBefore = urlStub.created.length;

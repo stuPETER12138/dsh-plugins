@@ -1,8 +1,8 @@
 {
   "name": "@local/dsh-session-share",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
-  "description": "Pick any part of the current conversation and share it as Markdown, an image, or a PDF.",
+  "description": "Pick any part of the current conversation and share it as Markdown, an image, or a PDF — tables, images and LaTeX formulas are laid out on-device.",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -24,7 +24,9 @@
     "export",
     "markdown",
     "pdf",
-    "png"
+    "png",
+    "latex",
+    "math"
   ],
   "exports": {
     ".": "./index.js",

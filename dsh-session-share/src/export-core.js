@@ -21,6 +21,16 @@
 function createExportCore() {
   'use strict';
 
+  // The LaTeX support lives in src/latex.js (inlined next to this chunk by
+  // tools/build-client.mjs). It is optional: when it cannot be created the
+  // export falls back to the raw TeX source instead of failing.
+  var latex = null;
+  try {
+    latex = createLatexEngine();
+  } catch (err) {
+    latex = null;
+  }
+
   // ---------------------------------------------------------------------------
   // Constants
   // ---------------------------------------------------------------------------
@@ -150,6 +160,246 @@ function createExportCore() {
   }
 
   // ---------------------------------------------------------------------------
+  // 0. LaTeX math: inline delimiters, display blocks and raster plumbing
+  // ---------------------------------------------------------------------------
+  var MATH_PLACEHOLDER_OPEN = '\uE000';
+  var MATH_PLACEHOLDER_CLOSE = '\uE001';
+  var MATH_DISPLAY_SIZE = 16;
+
+  function mathKey(tex, display) {
+    return String(tex == null ? '' : tex) + '\u0000' + (display ? '1' : '0');
+  }
+
+  function mathPlaceholder(index) {
+    return MATH_PLACEHOLDER_OPEN + index.toString(36) + MATH_PLACEHOLDER_CLOSE;
+  }
+
+  function unescapeMarkdown(text) {
+    return String(text == null ? '' : text)
+      .replace(/\\([\\`*_{}\[\]()#+\-.!$>~|])/g, '$1');
+  }
+
+  /**
+   * Split inline math out of a markdown line before the inline markdown regex
+   * runs. Supported, matching the DSH chat renderer: `$...$`, `$$...$$`
+   * (inline, not display) and `\(...\)`. Code spans and backslash escapes are
+   * honoured so `$` inside them never opens math.
+   */
+  function protectInlineMath(source) {
+    var text = String(source == null ? '' : source);
+    var out = '';
+    var items = [];
+    var i = 0;
+    var n = text.length;
+    var guard = 0;
+    while (i < n && guard < 200000) {
+      guard += 1;
+      var ch = text.charAt(i);
+      if (ch === '\\') {
+        var next = text.charAt(i + 1);
+        if (next === '(') {
+          var close = text.indexOf('\\)', i + 2);
+          if (close >= 0) {
+            var tex = text.slice(i + 2, close);
+            if (tex.trim()) {
+              items.push({ tex: tex, display: false, source: text.slice(i, close + 2) });
+              out += mathPlaceholder(items.length - 1);
+              i = close + 2;
+              continue;
+            }
+          }
+        }
+        if (next !== '') {
+          out += ch + next;
+          i += 2;
+          continue;
+        }
+        out += ch;
+        i += 1;
+        continue;
+      }
+      if (ch === '`') {
+        var run = 1;
+        while (text.charAt(i + run) === '`') run += 1;
+        var fence = repeatString('`', run);
+        var end = text.indexOf(fence, i + run);
+        if (end >= 0) {
+          out += text.slice(i, end + run);
+          i = end + run;
+          continue;
+        }
+        out += text.slice(i);
+        i = n;
+        continue;
+      }
+      if (ch === '$') {
+        var dollars = 1;
+        while (text.charAt(i + dollars) === '$') dollars += 1;
+        if (dollars <= 2) {
+          var search = i + dollars;
+          var closeAt = -1;
+          while (search < n) {
+            var found = text.indexOf('$', search);
+            if (found < 0) break;
+            var runLength = 1;
+            while (text.charAt(found + runLength) === '$') runLength += 1;
+            if (runLength === dollars) {
+              closeAt = found;
+              break;
+            }
+            search = found + runLength;
+          }
+          if (closeAt >= 0) {
+            var inner = text.slice(i + dollars, closeAt);
+            if (inner.trim()) {
+              items.push({ tex: inner, display: false, source: text.slice(i, closeAt + dollars) });
+              out += mathPlaceholder(items.length - 1);
+              i = closeAt + dollars;
+              continue;
+            }
+          }
+        }
+        out += text.slice(i, i + dollars);
+        i += dollars;
+        continue;
+      }
+      out += ch;
+      i += 1;
+    }
+    return { masked: out, items: items };
+  }
+
+  function repeatString(value, count) {
+    var out = '';
+    for (var i = 0; i < count; i += 1) out += value;
+    return out;
+  }
+
+  /** Turn the protected placeholders back into math spans, split by style. */
+  function restoreInlineMath(spans, items) {
+    var result = [];
+    var pattern = /\uE000([0-9a-z]+)\uE001/g;
+    for (var i = 0; i < spans.length; i += 1) {
+      var span = spans[i] || {};
+      var text = typeof span.text === 'string' ? span.text : '';
+      if (!items.length || text.indexOf(MATH_PLACEHOLDER_OPEN) < 0) {
+        if (span.math) {
+          result.push(span);
+        } else if (text) {
+          var plain = span.code ? text : unescapeMarkdown(text);
+          if (plain) {
+            result.push({
+              text: plain, bold: !!span.bold, italic: !!span.italic,
+              code: !!span.code, strike: !!span.strike, muted: !!span.muted
+            });
+          }
+        }
+        continue;
+      }
+      var last = 0;
+      var match;
+      pattern.lastIndex = 0;
+      while ((match = pattern.exec(text))) {
+        if (match.index > last) {
+          var piece = span.code ? text.slice(last, match.index) : unescapeMarkdown(text.slice(last, match.index));
+          if (piece) {
+            result.push({
+              text: piece, bold: !!span.bold, italic: !!span.italic,
+              code: !!span.code, strike: !!span.strike, muted: !!span.muted
+            });
+          }
+        }
+        var item = items[parseInt(match[1], 36)];
+        if (item) {
+          result.push({
+            text: '', math: item, bold: !!span.bold, italic: !!span.italic,
+            code: !!span.code, strike: !!span.strike, muted: !!span.muted
+          });
+        }
+        last = pattern.lastIndex;
+      }
+      if (last < text.length) {
+        var tail = span.code ? text.slice(last) : unescapeMarkdown(text.slice(last));
+        if (tail) {
+          result.push({
+            text: tail, bold: !!span.bold, italic: !!span.italic,
+            code: !!span.code, strike: !!span.strike, muted: !!span.muted
+          });
+        }
+      }
+    }
+    return result;
+  }
+
+  /** Position of the closing `$$` of a same-line display formula, else -1. */
+  function trailingDollarClose(line) {
+    var trimmed = String(line).replace(/[ \t]+$/, '');
+    var count = 0;
+    var i = trimmed.length;
+    while (i > 0 && trimmed.charAt(i - 1) === '$') {
+      count += 1;
+      i -= 1;
+    }
+    if (count !== 2) return -1;
+    return trimmed.length - 2;
+  }
+
+  /**
+   * Detect a display math construct starting at lines[index]. Handles the
+   * same-line `$$a$$` / `\[a\]` forms and the multi-line fences, matching the
+   * DSH chat renderer (`$$` flow and `\[...\]` flow).
+   */
+  function readDisplayMath(lines, index) {
+    var line = String(lines[index] == null ? '' : lines[index]);
+    if (/^[ \t]{0,3}\$\$/.test(line)) {
+      var close = trailingDollarClose(line);
+      if (close >= 2) {
+        return { tex: line.slice(2, close), source: line, next: index + 1 };
+      }
+      var body = [];
+      var j = index + 1;
+      var closed = -1;
+      while (j < lines.length) {
+        if (/^[ \t]{0,3}\$\$[ \t]*$/.test(String(lines[j]))) {
+          closed = j;
+          break;
+        }
+        body.push(String(lines[j] == null ? '' : lines[j]));
+        j += 1;
+      }
+      if (closed >= 0) {
+        return { tex: body.join('\n'), source: lines.slice(index, closed + 1).join('\n'), next: closed + 1 };
+      }
+      return null;
+    }
+    var bracket = /^[ \t]{0,3}\\\[/.exec(line);
+    if (bracket) {
+      var openEnd = bracket[0].length;
+      var trimmedLine = line.replace(/[ \t]+$/, '');
+      if (trimmedLine.length >= openEnd + 2 && trimmedLine.slice(-2) === '\\]') {
+        return { tex: line.slice(openEnd, trimmedLine.length - 2), source: line, next: index + 1 };
+      }
+      var rest = line.slice(openEnd);
+      var bodyLines = rest.trim() ? [rest] : [];
+      var k = index + 1;
+      var closeBracket = -1;
+      while (k < lines.length) {
+        if (/^[ \t]{0,3}\\\][ \t]*$/.test(String(lines[k]))) {
+          closeBracket = k;
+          break;
+        }
+        bodyLines.push(String(lines[k] == null ? '' : lines[k]));
+        k += 1;
+      }
+      if (closeBracket >= 0) {
+        return { tex: bodyLines.join('\n'), source: lines.slice(index, closeBracket + 1).join('\n'), next: closeBracket + 1 };
+      }
+      return null;
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
   // 1. Markdown export
   // ---------------------------------------------------------------------------
   function serializeMarkdown(view, options) {
@@ -248,7 +498,26 @@ function createExportCore() {
           codeLines.push(lines[i]);
           i++;
         }
-        blocks.push({ type: 'code', lines: codeLines, lang: fence[2] || '' });
+        // The DSH chat renders ```math fences as display math (not as code),
+        // so the share card does the same for completed conversations.
+        if (String(fence[2] || '').toLowerCase() === 'math') {
+          blocks.push({ type: 'math', tex: codeLines.join('\n'), display: true, source: codeLines.join('\n') });
+        } else {
+          blocks.push({ type: 'code', lines: codeLines, lang: fence[2] || '' });
+        }
+        continue;
+      }
+
+      var displayMath = readDisplayMath(lines, i);
+      if (displayMath) {
+        flushParagraph();
+        if (String(displayMath.tex || '').trim()) {
+          blocks.push({
+            type: 'math', tex: displayMath.tex, display: true,
+            source: displayMath.source
+          });
+        }
+        i = displayMath.next;
         continue;
       }
 
@@ -396,8 +665,9 @@ function createExportCore() {
   }
 
   function parseInline(text) {
+    var protectedText = protectInlineMath(String(text == null ? '' : text));
+    var source = protectedText.masked;
     var spans = [];
-    var source = String(text == null ? '' : text);
     var pattern = /(\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|!\[[^\]]*\]\([^)]*\)|\[[^\]]*\]\([^)]*\)|\*[^*\s][^*]*\*)/g;
     var last = 0;
     var match;
@@ -422,16 +692,24 @@ function createExportCore() {
       last = pattern.lastIndex;
     }
     if (last < source.length) spans.push({ text: source.slice(last) });
-    return mergeSpans(spans);
+    return mergeSpans(restoreInlineMath(spans, protectedText.items));
   }
 
   function mergeSpans(spans) {
     var merged = [];
     for (var i = 0; i < spans.length; i++) {
       var span = spans[i];
+      if (span.math) {
+        merged.push({
+          text: '', math: span.math, bold: !!span.bold, italic: !!span.italic,
+          code: !!span.code, strike: !!span.strike, muted: !!span.muted
+        });
+        continue;
+      }
       if (!span.text) continue;
       var previous = merged[merged.length - 1];
-      if (previous && !!previous.bold === !!span.bold && !!previous.italic === !!span.italic &&
+      if (previous && !previous.math &&
+          !!previous.bold === !!span.bold && !!previous.italic === !!span.italic &&
           !!previous.code === !!span.code && !!previous.strike === !!span.strike &&
           !!previous.muted === !!span.muted) {
         previous.text += span.text;
@@ -494,10 +772,54 @@ function createExportCore() {
     };
   }
 
-  function toAtoms(spans, size, base) {
+  function mathEntryOf(mode, tex, display) {
+    if (!mode || !mode.math || typeof mode.math.get !== 'function') return null;
+    var entry = mode.math.get(mathKey(tex, display));
+    return entry && entry.canvas ? entry : null;
+  }
+
+  /** Rasterised formula entry -> layout box measured against the text baseline. */
+  function resolveInlineMathBox(span, size, mode) {
+    var math = span && span.math ? span.math : {};
+    var entry = mathEntryOf(mode, math.tex, math.display);
+    if (!entry) return null;
+    var scale = size / (entry.baseFont || 48);
+    var pad = (entry.pad || 0) * scale;
+    return {
+      w: (entry.cssW + (entry.pad || 0) * 2) * scale,
+      h: (entry.cssH + (entry.pad || 0) * 2) * scale,
+      ascent: (entry.ascent + (entry.pad || 0)) * scale,
+      descent: (entry.descent + (entry.pad || 0)) * scale,
+      img: entry.canvas
+    };
+  }
+
+  function scaleMathBox(box, factor) {
+    return {
+      w: box.w * factor, h: box.h * factor,
+      ascent: box.ascent * factor, descent: box.descent * factor,
+      img: box.img
+    };
+  }
+
+  function toAtoms(spans, size, base, mode) {
     var atoms = [];
     for (var i = 0; i < spans.length; i++) {
       var span = spans[i] || {};
+      if (span.math) {
+        var box = resolveInlineMathBox(span, size, mode);
+        if (box) {
+          atoms.push({ box: box });
+        } else {
+          // No raster available (unsupported TeX, older browser, ...): keep the
+          // original source visible instead of dropping the content.
+          atoms.push({
+            text: String(span.math.source || span.math.tex || ''),
+            style: buildStyle(span, size, base)
+          });
+        }
+        continue;
+      }
       var style = buildStyle(span, size, base);
       var text = String(span.text == null ? '' : span.text);
       var buffer = '';
@@ -538,17 +860,17 @@ function createExportCore() {
     return pieces;
   }
 
-  function wrapSpans(ctx, spans, maxWidth, size, base) {
-    var atoms = toAtoms(spans, size, base);
+  function wrapSpans(ctx, spans, maxWidth, size, base, mode) {
+    var atoms = toAtoms(spans, size, base, mode);
     var limit = Math.max(24, maxWidth);
     var lines = [];
-    var current = { segments: [], width: 0 };
+    var current = { segments: [], width: 0, mathAscent: 0, mathDescent: 0 };
     var pendingSpace = null;
 
     function addSegment(text, style, x, width) {
       var segments = current.segments;
       var previous = segments[segments.length - 1];
-      if (previous && previous.font === style.font && previous.color === style.color &&
+      if (previous && !previous.kind && previous.font === style.font && previous.color === style.color &&
           previous.code === style.code && previous.strike === style.strike) {
         previous.text += text;
         previous.width += width;
@@ -560,9 +882,16 @@ function createExportCore() {
       }
     }
 
+    function addBoxSegment(box, x) {
+      current.segments.push({ kind: 'math', box: box, x: x, width: box.w });
+      current.width += box.w;
+      if (box.ascent > current.mathAscent) current.mathAscent = box.ascent;
+      if (box.descent > current.mathDescent) current.mathDescent = box.descent;
+    }
+
     function flushLine() {
       if (current.segments.length) lines.push(current);
-      current = { segments: [], width: 0 };
+      current = { segments: [], width: 0, mathAscent: 0, mathDescent: 0 };
       pendingSpace = null;
     }
 
@@ -577,11 +906,31 @@ function createExportCore() {
 
     for (var i = 0; i < atoms.length; i++) {
       var atom = atoms[i];
+      if (atom.box) {
+        var box = atom.box;
+        var boxSpaceWidth = pendingSpace && current.width > 0
+          ? measureWidth(ctx, ' ', pendingSpace.style.font) : 0;
+        if (current.segments.length && current.width + boxSpaceWidth + box.w > limit) {
+          flushLine();
+          boxSpaceWidth = 0;
+        }
+        if (pendingSpace && current.width > 0) {
+          addSegment(' ', pendingSpace.style, current.width, boxSpaceWidth);
+          current.width += boxSpaceWidth;
+          pendingSpace = null;
+        }
+        if (!current.segments.length && box.w > limit) {
+          box = scaleMathBox(box, limit / box.w);
+        }
+        addBoxSegment(box, current.width);
+        continue;
+      }
       if (atom.space) {
         if (current.width > 0) pendingSpace = atom;
         continue;
       }
-      var width = measureWidth(ctx, atom.text, atom.style.font);
+      var atomText = atom.text == null ? '' : atom.text;
+      var width = measureWidth(ctx, atomText, atom.style.font);
       var spaceWidth = pendingSpace && current.width > 0
         ? measureWidth(ctx, ' ', pendingSpace.style.font) : 0;
       if (current.segments.length && current.width + spaceWidth + width > limit) {
@@ -596,12 +945,12 @@ function createExportCore() {
       if (!current.segments.length && width > limit) {
         placeOverflowAtom(atom);
       } else {
-        addSegment(atom.text, atom.style, current.width, width);
+        addSegment(atomText, atom.style, current.width, width);
         current.width += width;
       }
     }
     flushLine();
-    if (!lines.length) lines.push({ segments: [], width: 0 });
+    if (!lines.length) lines.push({ segments: [], width: 0, mathAscent: 0, mathDescent: 0 });
     return lines;
   }
 
@@ -637,6 +986,69 @@ function createExportCore() {
     var y = 0;
     var width = Math.max(120, contentWidth);
 
+    /** wrapSpans bound to this document's canvas and math raster map. */
+    function wrap(spans, maxWidth, size, base) {
+      return wrapSpans(ctx, spans, maxWidth, size, base, mode);
+    }
+
+    /**
+     * A wrapped line occupies `ascent + descent`; text keeps the legacy
+     * baseline (lineHeight/2 + size*0.34) while an inline formula may grow the
+     * line above or below that baseline.
+     */
+    function lineMetrics(line, size, lineHeightOption) {
+      var baseHeight = lineHeightOption || size * LINE_HEIGHT;
+      var defaultAscent = baseHeight / 2 + size * 0.34;
+      var defaultDescent = baseHeight - defaultAscent;
+      var mathAscent = line && line.mathAscent ? line.mathAscent : 0;
+      var mathDescent = line && line.mathDescent ? line.mathDescent : 0;
+      var ascent = Math.max(defaultAscent, mathAscent);
+      var descent = Math.max(defaultDescent, mathDescent);
+      return { ascent: ascent, descent: descent, height: ascent + descent };
+    }
+
+    var opGroup = 0;
+
+    function nextOpGroup() {
+      opGroup += 1;
+      return opGroup;
+    }
+
+    /** Emit one wrapped line: text segments as a text op, math boxes as images. */
+    function pushLineOps(line, lineX, top, size, lineHeightOption, colorOverride, groupOverride) {
+      var metrics = lineMetrics(line, size, lineHeightOption);
+      var group = groupOverride === undefined || groupOverride === null ? nextOpGroup() : groupOverride;
+      var segments = [];
+      var mathOps = [];
+      for (var s = 0; s < line.segments.length; s += 1) {
+        var segment = line.segments[s];
+        if (segment.kind === 'math') {
+          var box = segment.box;
+          var boxTop = top + metrics.ascent - box.ascent;
+          mathOps.push({
+            type: 'image', x: lineX + segment.x, top: boxTop, bottom: boxTop + box.h,
+            w: box.w, h: box.h, img: box.img, group: group
+          });
+          continue;
+        }
+        segments.push({
+          text: segment.text, x: lineX + segment.x, width: segment.width,
+          font: segment.font, color: colorOverride || segment.color,
+          code: segment.code, strike: segment.strike, size: segment.size
+        });
+      }
+      // The text op goes first so the group starts at the line's top edge (the
+      // PDF page offset uses the first op of the page).
+      if (segments.length) {
+        ops.push({
+          type: 'text', top: top, bottom: top + metrics.height,
+          baseline: top + metrics.ascent, segments: segments, group: group
+        });
+      }
+      for (var m = 0; m < mathOps.length; m += 1) ops.push(mathOps[m]);
+      return metrics;
+    }
+
     function addRect(x, top, w, h, color, radius) {
       if (h <= 0 || w <= 0) return;
       ops.push({ type: 'rect', x: x, top: top, bottom: top + h, w: w, h: h, color: color, radius: radius || 0 });
@@ -652,47 +1064,38 @@ function createExportCore() {
 
     function emitLines(lines, x, size, lineOptions) {
       lineOptions = lineOptions || {};
-      var lineHeight = lineOptions.lineHeight || size * LINE_HEIGHT;
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
+        var metrics = lineMetrics(line, size, lineOptions.lineHeight);
         var top = y;
-        y += lineHeight;
+        y += metrics.height;
         var lineX = x;
         if (lineOptions.align === 'center') lineX = x + (width - line.width) / 2;
         else if (lineOptions.align === 'right') lineX = x + width - line.width;
-        var segments = [];
-        for (var s = 0; s < line.segments.length; s++) {
-          var segment = line.segments[s];
-          segments.push({
-            text: segment.text, x: lineX + segment.x, width: segment.width,
-            font: segment.font, color: segment.color,
-            code: segment.code, strike: segment.strike, size: segment.size
-          });
-        }
-        ops.push({
-          type: 'text', top: top, bottom: top + lineHeight,
-          baseline: top + lineHeight / 2 + size * 0.34, segments: segments
-        });
+        pushLineOps(line, lineX, top, size, lineOptions.lineHeight, null);
       }
     }
 
-    function drawTextLine(text, x, top, size, font, color, align) {
+    function drawTextLine(text, x, top, size, font, color, align, ascentOverride, heightOverride, group) {
       var textWidth = measureWidth(ctx, text, font);
       var drawX = x;
       if (align === 'right') drawX = x - textWidth;
       else if (align === 'center') drawX = x - textWidth / 2;
-      var lineHeight = size * LINE_HEIGHT;
-      ops.push({
+      var lineHeight = heightOverride || size * LINE_HEIGHT;
+      var ascent = ascentOverride || lineHeight / 2 + size * 0.34;
+      var op = {
         type: 'text', top: top, bottom: top + lineHeight,
-        baseline: top + lineHeight / 2 + size * 0.34,
+        baseline: top + ascent,
         segments: [{ text: text, x: drawX, width: textWidth, font: font, color: color, code: false, strike: false, size: size }]
-      });
+      };
+      if (group !== undefined && group !== null) op.group = group;
+      ops.push(op);
     }
 
     function layoutNotice() {
       var text = '内容较长，图片已自动缩放（像素高度上限 ' + IMAGE_MAX_PIXEL_HEIGHT + ' 像素）';
       var padY = 8;
-      var lines = wrapSpans(ctx, [{ text: text }], width - 24, SIZE.meta, { color: '#92400E' });
+      var lines = wrap([{ text: text }], width - 24, SIZE.meta, { color: '#92400E' });
       var height = padY * 2 + lines.length * SIZE.meta * LINE_HEIGHT;
       addRect(0, y, width, height, '#FEF3C7', 8);
       y += padY;
@@ -703,7 +1106,7 @@ function createExportCore() {
 
     function layoutHeader() {
       var title = resolveTitle(view, options);
-      var titleLines = wrapSpans(ctx, [{ text: title }], width, SIZE.title, { weight: 700, color: COLOR.title });
+      var titleLines = wrap([{ text: title }], width, SIZE.title, { weight: 700, color: COLOR.title });
       emitLines(titleLines, 0, SIZE.title, { lineHeight: SIZE.title * 1.3 });
       addGap(8);
 
@@ -713,7 +1116,7 @@ function createExportCore() {
       metaParts.push('共 ' + items.length + ' 条消息');
       var model = resolveModel(view, items);
       if (model) metaParts.push(model);
-      var metaLines = wrapSpans(ctx, [{ text: metaParts.join(' · ') }], width, SIZE.meta, { color: COLOR.meta });
+      var metaLines = wrap([{ text: metaParts.join(' · ') }], width, SIZE.meta, { color: COLOR.meta });
       emitLines(metaLines, 0, SIZE.meta);
       addGap(16);
       addRule(y);
@@ -752,7 +1155,7 @@ function createExportCore() {
         var spans = [{ text: '\u25B8 ', muted: true }, { text: String(call.name || 'tool'), bold: true }];
         if (call.title) spans.push({ text: ' — ' + String(call.title), muted: true });
         if (call.status) spans.push({ text: '（' + String(call.status) + '）', muted: true });
-        var lines = wrapSpans(ctx, spans, width - 16, SIZE.meta);
+        var lines = wrap(spans, width - 16, SIZE.meta);
         emitLines(lines, 16, SIZE.meta);
         addGap(2);
       }
@@ -796,7 +1199,7 @@ function createExportCore() {
       }
 
       if (drawn === 0) {
-        var lines = wrapSpans(ctx, [{ text: '图片 ' + count + ' 张（导出未内嵌）', muted: true }], width, SIZE.meta);
+        var lines = wrap([{ text: '图片 ' + count + ' 张（导出未内嵌）', muted: true }], width, SIZE.meta);
         emitLines(lines, 0, SIZE.meta);
         addGap(4);
       }
@@ -810,28 +1213,26 @@ function createExportCore() {
         var markerFont = fontString(SIZE.body, { weight: item.ordered ? 400 : 700 });
         var markerWidth = measureWidth(ctx, marker + ' ', markerFont);
         var available = Math.max(24, width - indent - markerWidth);
-        var bodyLines = wrapSpans(ctx, parseInline(item.text), available, SIZE.body);
-        var lineHeight = SIZE.body * LINE_HEIGHT;
-        var top = y;
-        drawTextLine(marker, indent, top, SIZE.body, markerFont, COLOR.muted);
+        var bodyLines = wrap(parseInline(item.text), available, SIZE.body);
+        var metricsList = [];
+        var totalHeight = 0;
         for (var l = 0; l < bodyLines.length; l++) {
-          var line = bodyLines[l];
-          var lineTop = top + l * lineHeight;
-          var segments = [];
-          for (var s = 0; s < line.segments.length; s++) {
-            var segment = line.segments[s];
-            segments.push({
-              text: segment.text, x: indent + markerWidth + segment.x, width: segment.width,
-              font: segment.font, color: segment.color,
-              code: segment.code, strike: segment.strike, size: segment.size
-            });
-          }
-          ops.push({
-            type: 'text', top: lineTop, bottom: lineTop + lineHeight,
-            baseline: lineTop + lineHeight / 2 + SIZE.body * 0.34, segments: segments
-          });
+          var metrics = lineMetrics(bodyLines[l], SIZE.body);
+          metricsList.push(metrics);
+          totalHeight += metrics.height;
         }
-        y = top + Math.max(1, bodyLines.length) * lineHeight;
+        var top = y;
+        var firstMetrics = metricsList[0] || lineMetrics({ segments: [], width: 0 }, SIZE.body);
+        var firstGroup = nextOpGroup();
+        drawTextLine(marker, indent, top, SIZE.body, markerFont, COLOR.muted, 'left',
+          firstMetrics.ascent, firstMetrics.height, firstGroup);
+        var lineTop = top;
+        for (var l2 = 0; l2 < bodyLines.length; l2++) {
+          pushLineOps(bodyLines[l2], indent + markerWidth, lineTop, SIZE.body, null, null,
+            l2 === 0 ? firstGroup : undefined);
+          lineTop += metricsList[l2].height;
+        }
+        y = top + totalHeight;
         addGap(3);
       }
       addGap(7);
@@ -839,7 +1240,7 @@ function createExportCore() {
 
     /** Natural one-line width of one table cell, measured with its real font. */
     function tableNaturalWidth(cellText, header) {
-      var lines = wrapSpans(ctx, parseInline(cellText), 1e6, SIZE.body, header ? { weight: 600 } : void 0);
+      var lines = wrap(parseInline(cellText), 1e6, SIZE.body, header ? { weight: 600 } : void 0);
       return lines.length > 0 ? lines[0].width : 0;
     }
 
@@ -891,42 +1292,40 @@ function createExportCore() {
       addGap(8);
       for (var row = 0; row < rows.length; row++) {
         var isHeader = row === 0;
-        var cellLines = [];
-        var rowHeight = padY * 2 + lineHeight;
+        var cellLayouts = [];
+        var rowHeight = padY * 2;
         for (var col = 0; col < columnCount; col++) {
           var text = rows[row][col] == null ? '' : String(rows[row][col]);
           var innerWidth = Math.max(12, widths[col] - padX * 2);
-          var lines = wrapSpans(ctx, parseInline(text), innerWidth, SIZE.body, isHeader ? { weight: 600 } : void 0);
-          cellLines.push(lines);
-          rowHeight = Math.max(rowHeight, padY * 2 + lines.length * lineHeight);
+          var lines = wrap(parseInline(text), innerWidth, SIZE.body, isHeader ? { weight: 600 } : void 0);
+          var metricsList = [];
+          var cellHeight = 0;
+          for (var m = 0; m < lines.length; m++) {
+            var cellMetrics = lineMetrics(lines[m], SIZE.body);
+            metricsList.push(cellMetrics);
+            cellHeight += cellMetrics.height;
+          }
+          cellLayouts.push({ lines: lines, metrics: metricsList });
+          rowHeight = Math.max(rowHeight, padY * 2 + cellHeight);
         }
 
         var top = y;
         if (isHeader) addRect(0, top, tableWidth, rowHeight, COLOR.codeBg, 0);
         var x = 0;
         for (var col2 = 0; col2 < columnCount; col2++) {
-          var cellRows = cellLines[col2];
+          var cellData = cellLayouts[col2];
+          var cellRows = cellData.lines;
+          var cellMetricsList = cellData.metrics;
           var align = block.aligns && block.aligns[col2] ? block.aligns[col2] : 'left';
+          var lineTop = top + padY;
           for (var l = 0; l < cellRows.length; l++) {
             var line = cellRows[l];
             var offset = padX;
             if (align === 'center') offset = (widths[col2] - line.width) / 2;
             else if (align === 'right') offset = widths[col2] - padX - line.width;
             if (offset < padX) offset = padX;
-            var segments = [];
-            for (var s = 0; s < line.segments.length; s++) {
-              var segment = line.segments[s];
-              segments.push({
-                text: segment.text, x: x + offset + segment.x, width: segment.width,
-                font: segment.font, color: isHeader ? COLOR.title : segment.color,
-                code: segment.code, strike: segment.strike, size: segment.size
-              });
-            }
-            var lineTop = top + padY + l * lineHeight;
-            ops.push({
-              type: 'text', top: lineTop, bottom: lineTop + lineHeight,
-              baseline: lineTop + lineHeight / 2 + SIZE.body * 0.34, segments: segments
-            });
+            pushLineOps(line, x + offset, lineTop, SIZE.body, null, isHeader ? COLOR.title : null);
+            lineTop += cellMetricsList[l].height;
           }
           x += widths[col2];
         }
@@ -940,10 +1339,12 @@ function createExportCore() {
     function layoutQuote(block) {
       var spans = parseInline(block.text);
       for (var i = 0; i < spans.length; i++) spans[i].muted = true;
-      var lines = wrapSpans(ctx, spans, width - 16, SIZE.body);
+      var lines = wrap(spans, width - 16, SIZE.body);
       var lineHeight = SIZE.body * LINE_HEIGHT;
+      var totalHeight = 0;
+      for (var l = 0; l < lines.length; l++) totalHeight += lineMetrics(lines[l], SIZE.body).height;
       var top = y;
-      addRect(0, top, 3, Math.max(lineHeight, lines.length * lineHeight), COLOR.quoteBar, 1.5);
+      addRect(0, top, 3, Math.max(lineHeight, totalHeight), COLOR.quoteBar, 1.5);
       emitLines(lines, 16, SIZE.body);
       addGap(10);
     }
@@ -978,15 +1379,46 @@ function createExportCore() {
       addGap(12);
     }
 
+    /**
+     * Display math: a centred, pre-rasterised formula. When the raster is
+     * missing (unsupported TeX or a rasterisation failure) the raw source is
+     * shown as muted text so nothing is silently dropped.
+     */
+    function layoutMathBlock(block) {
+      var source = typeof block.tex === 'string' ? block.tex : '';
+      var entry = mathEntryOf(mode, source, true);
+      addGap(10);
+      if (entry) {
+        var scale = MATH_DISPLAY_SIZE / (entry.baseFont || 48);
+        var drawWidth = (entry.cssW + (entry.pad || 0) * 2) * scale;
+        var drawHeight = (entry.cssH + (entry.pad || 0) * 2) * scale;
+        if (drawWidth > width) {
+          var shrink = width / drawWidth;
+          drawWidth = width;
+          drawHeight = drawHeight * shrink;
+        }
+        var left = (width - drawWidth) / 2;
+        ops.push({
+          type: 'image', x: left, top: y, bottom: y + drawHeight,
+          w: drawWidth, h: drawHeight, img: entry.canvas
+        });
+        y += drawHeight;
+      } else {
+        var fallbackLines = wrap([{ text: source, muted: true }], width - 16, SIZE.body);
+        emitLines(fallbackLines, 8, SIZE.body);
+      }
+      addGap(12);
+    }
+
     function layoutBlock(block, state) {
       if (block.type === 'heading') {
         var size = block.level === 1 ? SIZE.h1 : (block.level === 2 ? SIZE.h2 : SIZE.body);
         if (!state.first) addGap(10);
-        var headingLines = wrapSpans(ctx, parseInline(block.text), width, size, { weight: 700, color: COLOR.title });
+        var headingLines = wrap(parseInline(block.text), width, size, { weight: 700, color: COLOR.title });
         emitLines(headingLines, 0, size, { lineHeight: size * 1.35 });
         addGap(6);
       } else if (block.type === 'paragraph') {
-        var paragraphLines = wrapSpans(ctx, parseInline(block.text), width, SIZE.body);
+        var paragraphLines = wrap(parseInline(block.text), width, SIZE.body);
         emitLines(paragraphLines, 0, SIZE.body);
         addGap(10);
       } else if (block.type === 'list') {
@@ -997,6 +1429,8 @@ function createExportCore() {
         layoutPre(block.lines || []);
       } else if (block.type === 'table') {
         layoutTable(block);
+      } else if (block.type === 'math') {
+        layoutMathBlock(block);
       } else if (block.type === 'hr') {
         addGap(6);
         addRule(y);
@@ -1030,7 +1464,7 @@ function createExportCore() {
 
     function layoutEmptyState() {
       addGap(14);
-      var lines = wrapSpans(ctx, [{ text: '（没有可分享的消息）', muted: true }], width, SIZE.body);
+      var lines = wrap([{ text: '（没有可分享的消息）', muted: true }], width, SIZE.body);
       emitLines(lines, 0, SIZE.body);
       addGap(14);
     }
@@ -1041,7 +1475,7 @@ function createExportCore() {
       y += 1;
       addGap(12);
       var text = '由 DSH 会话分享导出 · ' + formatDateTime(resolveMetaDate(view, options));
-      var lines = wrapSpans(ctx, [{ text: text }], width, SIZE.meta, { color: COLOR.meta });
+      var lines = wrap([{ text: text }], width, SIZE.meta, { color: COLOR.meta });
       emitLines(lines, 0, SIZE.meta, { align: 'center' });
       addGap(4);
     }
@@ -1064,8 +1498,21 @@ function createExportCore() {
     while (index < ops.length) {
       var startTop = ops[index].top;
       var limit = startTop + pageHeight + 0.001;
+      var group = ops[index].group;
       var end = index;
-      while (end < ops.length && ops[end].bottom <= limit) end++;
+      // Whole op groups (a text line plus its inline formulas) stay on one
+      // page; a break may only happen between groups.
+      while (end < ops.length) {
+        if (group !== undefined && ops[end].group === group) {
+          end += 1;
+          continue;
+        }
+        if (ops[end].bottom <= limit) {
+          end += 1;
+          continue;
+        }
+        break;
+      }
       if (end === index) end = index + 1;
       pages.push({ ops: ops.slice(index, end), startTop: startTop });
       index = end;
@@ -1213,6 +1660,99 @@ function createExportCore() {
   }
 
   // ---------------------------------------------------------------------------
+  // 5c. LaTeX formula collection and raster preparation
+  // ---------------------------------------------------------------------------
+  /** Every math source in the selected items, deduplicated by key. */
+  function collectMathSources(view) {
+    var found = [];
+    var seen = {};
+    var items = resolveItems(view);
+
+    function add(tex, display) {
+      var value = String(tex == null ? '' : tex);
+      if (!value.trim()) return;
+      var key = mathKey(value, display);
+      if (seen[key]) return;
+      seen[key] = true;
+      found.push({ key: key, tex: value, display: !!display });
+    }
+
+    function scanInline(text) {
+      if (typeof text !== 'string' || !text) return;
+      var spans = parseInline(text);
+      for (var s = 0; s < spans.length; s++) {
+        if (spans[s].math) add(spans[s].math.tex, false);
+      }
+    }
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i] || {};
+      var text = typeof item.text === 'string' ? item.text : '';
+      if (!text) continue;
+      var blocks = parseMarkdown(text);
+      for (var b = 0; b < blocks.length; b++) {
+        var block = blocks[b];
+        if (!block) continue;
+        if (block.type === 'math') {
+          add(block.tex, true);
+        } else if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'quote') {
+          scanInline(block.text);
+        } else if (block.type === 'list') {
+          var listItems = block.items || [];
+          for (var li = 0; li < listItems.length; li++) scanInline((listItems[li] || {}).text);
+        } else if (block.type === 'table') {
+          var rows = block.rows || [];
+          for (var r = 0; r < rows.length; r++) {
+            for (var c = 0; c < (rows[r] || []).length; c++) scanInline(rows[r][c]);
+          }
+        }
+      }
+    }
+    return found;
+  }
+
+  /** Rasterise every formula used by the view (browser only; never rejects). */
+  function loadMathRasters(view) {
+    if (!latex) return Promise.resolve(new Map());
+    var formulas;
+    try {
+      formulas = collectMathSources(view);
+    } catch (err) {
+      formulas = [];
+    }
+    if (!formulas.length) return Promise.resolve(new Map());
+    try {
+      return latex.rasterize(formulas).then(function (map) {
+        return map instanceof Map ? map : new Map();
+      }, function () {
+        return new Map();
+      });
+    } catch (err) {
+      return Promise.resolve(new Map());
+    }
+  }
+
+  /** Tests may inject a prepared map; production always rasterises the view. */
+  function prepareMath(view, options) {
+    if (options && options.mathRasters && typeof options.mathRasters.get === 'function') {
+      return Promise.resolve(options.mathRasters);
+    }
+    return loadMathRasters(view);
+  }
+
+  function releaseMathRasters(map) {
+    if (!map || typeof map.forEach !== 'function') return;
+    map.forEach(function (entry) {
+      if (entry && entry.canvas) {
+        try {
+          entry.canvas.width = 0;
+          entry.canvas.height = 0;
+        } catch (err) { /* ignore */ }
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // 6. Canvas / blob helpers
   // ---------------------------------------------------------------------------
   function cleanupCanvas(canvas) {
@@ -1355,7 +1895,10 @@ function createExportCore() {
   // ---------------------------------------------------------------------------
   function renderImage(view, options) {
     options = options || {};
-    return loadAttachmentImages(view).then(function (embeddedImages) {
+    return Promise.all([loadAttachmentImages(view), prepareMath(view, options)]).then(function (prepared) {
+      var embeddedImages = prepared[0];
+      var mathMap = prepared[1];
+      var mode = { footer: true, images: embeddedImages, math: mathMap };
       return Promise.resolve().then(function () {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
@@ -1363,13 +1906,14 @@ function createExportCore() {
         ctx.textBaseline = 'alphabetic';
         ctx.textAlign = 'left';
 
-        var layout = layoutDocument(ctx, view, options, IMAGE_CONTENT_WIDTH, { footer: true, images: embeddedImages });
+        var layout = layoutDocument(ctx, view, options, IMAGE_CONTENT_WIDTH, mode);
         var totalHeight = IMAGE_PAD_Y * 2 + layout.height;
         var scale = IMAGE_MAX_SCALE;
         var scaled = false;
 
         if (totalHeight > IMAGE_MAX_CSS_HEIGHT) {
-          layout = layoutDocument(ctx, view, options, IMAGE_CONTENT_WIDTH, { footer: true, notice: true, images: embeddedImages });
+          var noticeMode = { footer: true, notice: true, images: embeddedImages, math: mathMap };
+          layout = layoutDocument(ctx, view, options, IMAGE_CONTENT_WIDTH, noticeMode);
           totalHeight = IMAGE_PAD_Y * 2 + layout.height;
           // The pixel-height cap is the hard limit (browsers refuse huge
           // canvases); the nominal floor only applies while the cap still holds.
@@ -1394,6 +1938,12 @@ function createExportCore() {
           cleanupCanvas(canvas);
           throw error;
         });
+      }).then(function (result) {
+        releaseMathRasters(mathMap);
+        return result;
+      }, function (error) {
+        releaseMathRasters(mathMap);
+        throw error;
       });
     });
   }
@@ -1442,7 +1992,9 @@ function createExportCore() {
 
   function renderPdf(view, options) {
     options = options || {};
-    return loadAttachmentImages(view).then(function (embeddedImages) {
+    return Promise.all([loadAttachmentImages(view), prepareMath(view, options)]).then(function (prepared) {
+      var embeddedImages = prepared[0];
+      var mathMap = prepared[1];
       return Promise.resolve().then(function () {
         var measureCanvas = document.createElement('canvas');
         var measureCtx = measureCanvas.getContext('2d');
@@ -1451,6 +2003,7 @@ function createExportCore() {
         measureCtx.textAlign = 'left';
         var layout = layoutDocument(measureCtx, view, options, PDF_CONTENT_WIDTH, {
           images: embeddedImages,
+          math: mathMap,
           imageMaxHeight: PDF_CONTENT_HEIGHT * 0.7,
         });
         cleanupCanvas(measureCanvas);
@@ -1470,6 +2023,12 @@ function createExportCore() {
           var bytes = buildPdf(images, { title: title, generatedAt: resolveMetaDate(view, options) });
           return { blob: new Blob([bytes], { type: 'application/pdf' }), pages: pages.length };
         });
+      }).then(function (result) {
+        releaseMathRasters(mathMap);
+        return result;
+      }, function (error) {
+        releaseMathRasters(mathMap);
+        throw error;
       });
     });
   }
@@ -1515,6 +2074,14 @@ function createExportCore() {
     serializeMarkdown: serializeMarkdown,
     renderImage: renderImage,
     renderPdf: renderPdf,
-    download: download
+    download: download,
+    // Internal hooks for the Node unit tests (not part of the public API).
+    __test: {
+      parseMarkdown: parseMarkdown,
+      parseInline: parseInline,
+      collectMathSources: collectMathSources,
+      mathKey: mathKey,
+      readDisplayMath: readDisplayMath
+    }
   };
 }

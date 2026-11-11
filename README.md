@@ -9,10 +9,10 @@
 | 插件 | 包名 / 版本 | 功能 | 在 DSH 里从哪里用 |
 | --- | --- | --- | --- |
 | [dsh-completion-notify](dsh-completion-notify/README.md) | `@local/dsh-completion-notify` · 1.0.0 | 会话跑完任务、出错、中断，或卡在等你授权/回答时，由 DSH 主进程弹出**操作系统通知**，标题写明是哪个会话 | 设置 → 通用 → 通知开关（+ 测试按钮） |
-| [dsh-session-share](dsh-session-share/README.md) | `@local/dsh-session-share` · 0.1.0 | 挑选当前会话里要分享的消息，导出为 **Markdown / PNG 长图 / PDF**，图片与表格都会排版，全部在本机完成 | 会话标题下方的「分享」页签 |
-| [dsh-sticky-wall](dsh-sticky-wall/README.md) | `@local/dsh-sticky-wall` · 1.1.0 | 左侧栏的**便签墙**：随手记灵感、置顶、搜索、六种便签纸颜色，支持撤销删除 | 左侧栏「便签墙」 |
+| [dsh-session-share](dsh-session-share/README.md) | `@local/dsh-session-share` · 0.2.0 | 挑选当前会话里要分享的消息，导出为 **Markdown / PNG 长图 / PDF**，图片、表格与 **LaTeX 公式**都会排版，全部在本机完成 | 会话标题下方的「分享」页签 |
+| [dsh-sticky-wall](dsh-sticky-wall/README.md) | `@local/dsh-sticky-wall` · 1.2.0 | 左侧栏的**便签墙**：随手记灵感、置顶、搜索、六种便签纸颜色，支持撤销删除；长短不一的便签按最短列**交错紧密排列**（瀑布流） | 左侧栏「便签墙」 |
 | [dsh-style-studio](dsh-style-studio/README.md) | `@local/dsh-style-studio` · 1.3.0 | 在设置里一键切换**五套应用级视觉风格**（水墨书画、深空极夜、苔原森野、像素街机、石墨黑白），自动适配浅色/深色 | 设置 → 通用 → 视觉风格 |
-| [dsh-usage-stats](dsh-usage-stats/README.md) | `@local/dsh-usage-stats` · 1.0.0 | 用本机真实会话日志统计 **Token 用量与估算成本**：时间线、模型成本构成、逐会话明细 | 左侧栏「用量统计」 |
+| [dsh-usage-stats](dsh-usage-stats/README.md) | `@local/dsh-usage-stats` · 1.1.0 | 用本机真实会话日志统计 **Token 用量与估算成本**：时间线、模型成本构成、逐会话明细，以及按供应商拆解的模型/会话消耗 | 左侧栏「用量统计」 |
 
 ## 安装
 
@@ -133,10 +133,10 @@ Five personal [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness
 | Plugin | What it does |
 | --- | --- |
 | `dsh-completion-notify` | OS notifications (task finished / errored / waiting for approval or answer) sent by the DSH host, titled with the session. |
-| `dsh-session-share` | Pick messages from the current conversation and export Markdown, a PNG image, or a PDF — entirely on-device. |
-| `dsh-sticky-wall` | A sticky-note wall in the left sidebar: capture, pin, search, undo delete. |
+| `dsh-session-share` | Pick messages from the current conversation and export Markdown, a PNG image, or a PDF — tables, images and LaTeX formulas are laid out on-device. |
+| `dsh-sticky-wall` | A sticky-note wall in the left sidebar: capture, pin, search, undo delete; notes of any height tile tightly in staggered columns. |
 | `dsh-style-studio` | Five app-wide visual styles under Settings → General → Visual styles. |
-| `dsh-usage-stats` | Token usage and estimated cost dashboard computed from this machine's session logs. |
+| `dsh-usage-stats` | Token usage and estimated cost dashboard computed from this machine's session logs, including per-provider model consumption and per-session breakdowns. |
 
 **Install (offline):** clone this repo, open **Plugins → Add plugin** in DSH Desktop, and paste the absolute path of one plugin folder (for example `D:\github\dsh-plugins\dsh-sticky-wall`). Install and enable it, then repeat for the others.
 

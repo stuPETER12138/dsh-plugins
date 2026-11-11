@@ -27,7 +27,7 @@ dsh-plugins/
 ```jsonc
 {
   "name": "@local/dsh-sticky-wall",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -131,7 +131,7 @@ $cli = 'D:\Software\DeepseekHarness\resources\runtime\cli\bin\dsh.cmd'
 
 ### `dsh-session-share` 的构建步骤
 
-它的浏览器半由 `src/client-shell.js` + `src/export-core.js` 内联生成到 `client.js`。改 `src/` 后必须重建：
+它的浏览器半由 `src/latex.js` + `src/export-core.js` + `src/client-shell.js` 依次内联生成到 `client.js`。改 `src/` 后必须重建：
 
 ```powershell
 cd dsh-session-share
@@ -139,6 +139,7 @@ node tools/build-client.mjs
 node --check client.js
 node tools/test-transcript.mjs
 node tools/test-export-core.mjs
+node tools/test-latex.mjs
 node tools/test-host.mjs
 ```
 

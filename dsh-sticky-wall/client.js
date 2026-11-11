@@ -27,7 +27,7 @@ window.__ModuleLoader__.load({
   factory: (require) => {
     const React = require('react')
     const h = React.createElement
-    const { useEffect, useRef, useState } = React
+    const { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } = React
 
     const NS = 'stickyWall'
     const PANEL_ID = 'sticky-wall'
@@ -379,6 +379,101 @@ window.__ModuleLoader__.load({
       return rows.sort((left, right) => (left.pinned === right.pinned ? right.updatedAt - left.updatedAt : left.pinned ? -1 : 1))
     }
 
+    // ── layout ─────────────────────────────────────────────────────────────
+
+    /** Fallbacks for the wall's layout knobs, which the stylesheet owns. */
+    const WALL_GAP = 14
+    const WALL_MIN_COLUMN = 228
+
+    /** Read one of the wall's own pixel tokens, falling back when it is unset. */
+    function cssPixels(style, name, fallback) {
+      const value = Number.parseFloat(style.getPropertyValue(name))
+      return Number.isFinite(value) && value > 0 ? value : fallback
+    }
+
+    /**
+     * Pack the cards onto the wall in staggered columns.
+     *
+     * A grid keeps every card of a row on the same line, so a short note leaves
+     * a hole underneath itself until the tallest card of that row ends. Here
+     * each card keeps its measured height and drops onto whichever column is
+     * currently shortest (ties go left), which is what makes uneven notes sit
+     * tightly together; the price is a ragged bottom edge.
+     *
+     * The DOM stays in reading order and React keeps owning the cards; only
+     * their box (width, `top`, `left`) and the wall's height are written
+     * straight to the elements. A re-measure therefore never re-renders, and an
+     * editing textarea keeps its focus while its own card grows.
+     *
+     * @param wallRef - ref to the `.sw-wall` element.
+     * @param signature - changes whenever the card list or a card's text does,
+     *   so a saved edit is re-packed even before the observer fires.
+     */
+    function useWallMasonry(wallRef, signature) {
+      const pack = useCallback(() => {
+        const wall = wallRef.current
+        if (wall === null) return
+        const cards = wall.querySelectorAll('.sw-note')
+        if (cards.length === 0) {
+          wall.style.height = '0px'
+          return
+        }
+        const available = wall.clientWidth
+        if (available <= 0) return
+
+        const computed = window.getComputedStyle(wall)
+        const gap = cssPixels(computed, '--sw-wall-gap', WALL_GAP)
+        const minColumn = cssPixels(computed, '--sw-wall-min', WALL_MIN_COLUMN)
+        const columns = Math.max(1, Math.floor((available + gap) / (minColumn + gap)))
+        const width = (available - gap * (columns - 1)) / columns
+
+        for (const card of cards) card.style.width = width + 'px'
+
+        // Measure every height before writing any position: interleaving the
+        // two would make the browser lay the wall out once per card.
+        const heights = []
+        for (const card of cards) heights.push(card.getBoundingClientRect().height)
+
+        const bottom = new Array(columns).fill(0)
+        let tallest = 0
+        for (let index = 0; index < cards.length; index += 1) {
+          let column = 0
+          for (let next = 1; next < columns; next += 1) {
+            if (bottom[next] < bottom[column] - 0.5) column = next
+          }
+          cards[index].style.left = column * (width + gap) + 'px'
+          cards[index].style.top = bottom[column] + 'px'
+          bottom[column] += heights[index] + gap
+          if (bottom[column] > tallest) tallest = bottom[column]
+        }
+        wall.style.height = Math.max(0, tallest - gap) + 'px'
+      }, [wallRef])
+
+      // Run after every render that can change the cards, but before the
+      // browser paints, so the wall never flashes as an unpositioned stack.
+      useLayoutEffect(() => {
+        pack()
+      }, [pack, signature])
+
+      // The sidebar, the window, the font, and an editing textarea all change
+      // a card's box without a render; re-pack whenever a measured size moves.
+      useEffect(() => {
+        const wall = wallRef.current
+        if (wall === null) return undefined
+        const redraw = () => pack()
+        const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(redraw) : null
+        if (observer !== null) {
+          observer.observe(wall)
+          for (const card of wall.querySelectorAll('.sw-note')) observer.observe(card)
+        }
+        window.addEventListener('resize', redraw)
+        return () => {
+          if (observer !== null) observer.disconnect()
+          window.removeEventListener('resize', redraw)
+        }
+      }, [pack, signature])
+    }
+
     // ── page ───────────────────────────────────────────────────────────────
 
     /** The wall panel: quick capture, search, and the grid of notes. */
@@ -390,6 +485,7 @@ window.__ModuleLoader__.load({
       const [editing, setEditing] = useState(null)
       const [toast, setToast] = useState(null)
       const composerRef = useRef(null)
+      const wallRef = useRef(null)
       const toastTimer = useRef(0)
 
       useEffect(() => {
@@ -478,7 +574,9 @@ window.__ModuleLoader__.load({
         cancel: () => setEditing(null),
       }
 
-      const visible = visibleNotes(notes, query)
+      const visible = useMemo(() => visibleNotes(notes, query), [notes, query])
+      const signature = visible.map((note) => note.id + ':' + note.updatedAt).join('|')
+      useWallMasonry(wallRef, signature)
 
       return h(
         'section',
@@ -519,7 +617,7 @@ window.__ModuleLoader__.load({
               ? emptyState(t, query.trim() !== '')
               : h(
                   'div',
-                  { className: 'sw-wall', role: 'list' },
+                  { className: 'sw-wall', role: 'list', ref: wallRef },
                   visible.map((note) =>
                     h(NoteCard, {
                       key: note.id,
@@ -602,8 +700,8 @@ window.__ModuleLoader__.load({
 .sw-button:disabled{opacity:.5;cursor:default}
 .sw-button-primary{border-color:transparent;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);font-weight:500}
 .sw-button-primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}
-.sw-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:14px;align-items:start}
-.sw-note{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0;padding:10px 12px 12px;border:.5px solid var(--dsw-alias-border-l3);border-top:3px solid var(--sw-color);border-radius:12px;background:color-mix(in oklab,var(--sw-color) 12%,var(--dsw-alias-bg-layer-1));transition:transform .15s,box-shadow .15s,background .15s}
+.sw-wall{position:relative;width:100%;--sw-wall-gap:14px;--sw-wall-min:228px}
+.sw-note{position:absolute;top:0;left:0;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;min-width:0;width:100%;padding:10px 12px 12px;border:.5px solid var(--dsw-alias-border-l3);border-top:3px solid var(--sw-color);border-radius:12px;background:color-mix(in oklab,var(--sw-color) 12%,var(--dsw-alias-bg-layer-1));transition:transform .15s,box-shadow .15s,background .15s}
 .sw-note:hover{transform:translateY(-1px);background:color-mix(in oklab,var(--sw-color) 17%,var(--dsw-alias-bg-layer-1));box-shadow:var(--dsw-elevation-stroke),var(--dsw-shadow-lv2)}
 .sw-note-pinned{background:color-mix(in oklab,var(--sw-color) 16%,var(--dsw-alias-bg-layer-1));box-shadow:var(--dsw-elevation-stroke),var(--dsw-shadow-lv2)}
 .sw-note-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}
@@ -633,7 +731,7 @@ window.__ModuleLoader__.load({
 .sw-page :focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .sw-composer-input:focus-visible,.sw-note-textarea:focus-visible,.sw-search input:focus-visible{outline:none}
 @media (hover:none){.sw-note-actions{opacity:1}}
-@media (width<=760px){.sw-search input{width:120px}.sw-wall{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}.sw-content{padding-bottom:48px}}
+@media (width<=760px){.sw-search input{width:120px}.sw-wall{--sw-wall-min:200px}.sw-content{padding-bottom:48px}}
 @media (prefers-reduced-motion:reduce){.sw-note,.sw-swatch,.sw-button,.sw-icon-button{transition:none}.sw-note:hover{transform:none}}
 /* Dark palette: the same layout, mixed against the raised dark layers. The
    light layers are all white, so paper tints there need a white base; here

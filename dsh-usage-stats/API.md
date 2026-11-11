@@ -1,4 +1,4 @@
-# Usage Stats — Host ⇄ Client API contract (v1)
+# Usage Stats — Host ⇄ Client API contract (v2)
 
 The Host half registers three exact HTTP routes on `ctx.webServer`; the Client half
 reads them with `fetch` from the Harness page (same origin). Every value below is
@@ -10,6 +10,14 @@ when the browser sends one) names the loopback interface, so a page served from 
 rebinding domain cannot read them. Errors answer
 `{ "error": { "code": string, "message": string } }` with a non-200 status.
 
+## v2 (2026-11-09)
+
+The only change from v1 is additive: every `sessions[]` item gained a
+`modelUsage` array (the per-model split of that session's usage inside the
+selected range) and the payload `version` is now `4` so a client can tell the
+two shapes apart. No route, request parameter, existing field or its meaning
+changed, so a v1 client that simply ignores `modelUsage` keeps working.
+
 ## GET `/dsh-usage-stats?days=<n>`
 
 `days` is an optional integer (`7`, `30`, `90`, `365`, or `0` for all time).
@@ -18,7 +26,7 @@ It selects the `range` block, and the `models` / `sessions` lists inside it;
 
 ```jsonc
 {
-  "version": 3,
+  "version": 4,
   "revision": 42,                 // increases whenever the aggregate changed
   "generatedAt": 1793680000000,
 
@@ -71,7 +79,7 @@ It selects the `range` block, and the `models` / `sessions` lists inside it;
     "requests": 120,
     "sessions": 23,               // sessions with activity inside the range
     "sessionsWithUsage": 21,      // ...of which at least one call reported usage
-    "models": [                   // cost composition for THIS range, ascending by tokens
+    "models": [                   // cost composition for THIS range, descending by tokens
       { "key": "deepseek-account/deepseek-flash", "provider": "deepseek-account",
         "model": "deepseek-flash", "calls": 1497,
         "tokens": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0,
@@ -116,6 +124,18 @@ It selects the `range` block, and the `models` / `sessions` lists inside it;
                   "reasoning": 0, "total": 0 },
       "costUsd": 3.2,
       "cacheHitRate": 0.63,        // cacheRead / (input + cacheRead), 0 when both 0
+      // Per-model split of the same range (the row's numbers above, one entry per
+      // provider/model used in it), sorted by tokens.total descending; [] when no
+      // model call fell in the range. The sums equal the row's own figures:
+      // Σ tokens.total === tokens.total, Σ costUsd === costUsd (within 1e-9
+      // relative), Σ calls === requests.
+      "modelUsage": [
+        { "key": "deepseek-official/deepseek-flash", "provider": "deepseek-official",
+          "model": "deepseek-flash", "calls": 390,
+          "tokens": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0,
+                      "reasoning": 0, "total": 0 },
+          "costUsd": 3.2, "unpricedCalls": 0, "priced": true } // priced === (unpricedCalls === 0)
+      ],
       "models": ["deepseek-official/deepseek-flash"],
       "priced": true,              // false when any in-range usage hit the fallback price
       "allTime": {                 // the session's whole life, for the detail panel
@@ -152,7 +172,7 @@ block describes what has been indexed so far, so the panel can show progress.
 
 ```jsonc
 {
-  "version": 3,
+  "version": 4,
   "revision": 42,             // compare with the full fetch; refetch when it changes
   "generatedAt": 1793680000000,
   "scan": { /* same shape as the full payload */ },

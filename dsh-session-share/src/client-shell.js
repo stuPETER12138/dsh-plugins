@@ -396,8 +396,8 @@ function ShareView(props) {
       })
       return
     }
-    // Hiding tool calls also drops them from the selection, so the footer never
-    // claims to export rows the list no longer shows.
+    // Hiding tool calls also drops them from the selection, so the selection
+    // count never claims to export rows the list no longer shows.
     setSelection((selected) => {
       const filtered = new Set()
       for (const id of selected) {
@@ -479,7 +479,7 @@ function ShareView(props) {
             h('span', { className: 'ss-title-glyph' }, h(Glyph, { name: 'share', size: 16 })),
             h('span', null, t('panelTitle')),
           ),
-          h('p', { className: 'ss-subtitle' }, t('panelSubtitle')),
+          h('p', { className: 'ss-subtitle' }, t('panelSubtitle'), ' · ', h('span', { className: 'ss-privacy' }, t('privacyNote'))),
         ),
         h(
           'button',
@@ -488,12 +488,73 @@ function ShareView(props) {
           h('span', null, t('refresh')),
         ),
       ),
+      // Format choice and the export action sit above the list: pick a format,
+      // then export without scrolling to the bottom of a long transcript.
+      h(
+        'div',
+        { className: 'ss-actions' },
+        h(
+          'div',
+          { className: 'ss-formats', role: 'group', 'aria-label': t('formatLabel') },
+          FORMATS.map((entry) =>
+            h(
+              'button',
+              {
+                key: entry.id,
+                type: 'button',
+                className: 'ss-format' + (format === entry.id ? ' is-active' : ''),
+                'aria-pressed': format === entry.id,
+                onClick: () => setFormat(entry.id),
+                disabled: busy !== null,
+              },
+              h(Glyph, { name: entry.glyph, size: 14 }),
+              h('span', null, t(entry.labelKey)),
+            ),
+          ),
+        ),
+        h(
+          'div',
+          { className: 'ss-actions-right' },
+          notice === null
+            ? null
+            : h(
+                'span',
+                {
+                  className: 'ss-notice' + (notice.kind === 'error' ? ' is-error' : ''),
+                  role: 'status',
+                  'aria-live': 'polite',
+                },
+                notice.message,
+              ),
+          format === 'md'
+            ? h(
+                'button',
+                { type: 'button', className: 'ss-button', onClick: copyMarkdown, disabled: busy !== null || selectedItems.length === 0 },
+                h(Glyph, { name: 'copy', size: 13 }),
+                h('span', null, t('copy')),
+              )
+            : null,
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'ss-button ss-button-primary',
+              onClick: () => {
+                void runExport()
+              },
+              disabled: state.phase !== 'ready' || selectedItems.length === 0 || busy !== null,
+            },
+            busy === null ? h(Glyph, { name: 'download', size: 13 }) : h('span', { className: 'ss-spinner ss-spinner-small', 'aria-hidden': 'true' }),
+            h('span', null, busy === null ? primaryLabel(t, format) : busyLabel(t, format)),
+          ),
+        ),
+      ),
       h(
         'div',
         { className: 'ss-body' },
         h(
           'section',
-          { className: 'ss-list-pane', 'aria-label': t('formatLabel') },
+          { className: 'ss-list-pane', 'aria-label': t('panelTitle') },
           h(
             'div',
             { className: 'ss-toolbar' },
@@ -588,70 +649,6 @@ function ShareView(props) {
             : null,
         ),
       ),
-      h(
-        'footer',
-        { className: 'ss-foot' },
-        h(
-          'div',
-          { className: 'ss-foot-left' },
-          h(
-            'div',
-            { className: 'ss-formats', role: 'group', 'aria-label': t('formatLabel') },
-            FORMATS.map((entry) =>
-              h(
-                'button',
-                {
-                  key: entry.id,
-                  type: 'button',
-                  className: 'ss-format' + (format === entry.id ? ' is-active' : ''),
-                  'aria-pressed': format === entry.id,
-                  onClick: () => setFormat(entry.id),
-                  disabled: busy !== null,
-                },
-                h(Glyph, { name: entry.glyph, size: 14 }),
-                h('span', null, t(entry.labelKey)),
-              ),
-            ),
-          ),
-          h('p', { className: 'ss-privacy' }, t('privacyNote')),
-        ),
-        h(
-          'div',
-          { className: 'ss-foot-actions' },
-          notice === null
-            ? null
-            : h(
-                'span',
-                {
-                  className: 'ss-notice' + (notice.kind === 'error' ? ' is-error' : ''),
-                  role: 'status',
-                  'aria-live': 'polite',
-                },
-                notice.message,
-              ),
-          format === 'md'
-            ? h(
-                'button',
-                { type: 'button', className: 'ss-button', onClick: copyMarkdown, disabled: busy !== null || selectedItems.length === 0 },
-                h(Glyph, { name: 'copy', size: 13 }),
-                h('span', null, t('copy')),
-              )
-            : null,
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'ss-button ss-button-primary',
-              onClick: () => {
-                void runExport()
-              },
-              disabled: state.phase !== 'ready' || selectedItems.length === 0 || busy !== null,
-            },
-            busy === null ? h(Glyph, { name: 'download', size: 13 }) : h('span', { className: 'ss-spinner ss-spinner-small', 'aria-hidden': 'true' }),
-            h('span', null, busy === null ? primaryLabel(t, format) : busyLabel(t, format)),
-          ),
-        ),
-      ),
     ),
   )
 }
@@ -660,7 +657,7 @@ function ShareView(props) {
 
 const STYLES = `
 .ss-page{display:flex;flex-direction:column;width:100%;min-height:100%;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family,inherit);font-size:13px;line-height:20px}
-.ss-shell{display:flex;flex-direction:column;width:100%;max-width:760px;margin:0 auto;padding:0 clamp(16px,3vw,36px)}
+.ss-shell{box-sizing:border-box;display:flex;flex-direction:column;width:100%;max-width:calc(760px + 2*clamp(16px,3vw,36px));margin:0 auto;padding:0 clamp(16px,3vw,36px) 14px}
 .ss-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 0 12px;border-bottom:.5px solid var(--dsw-alias-border-l2)}
 .ss-head-text{min-width:0}
 .ss-title{display:flex;align-items:center;gap:7px;margin:0;font-size:16px;font-weight:600;line-height:24px}
@@ -669,6 +666,8 @@ const STYLES = `
 .ss-refresh{display:inline-flex;align-items:center;gap:5px;flex:none;height:28px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l3);border-radius:14px;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:18px;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
 .ss-refresh:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l4)}
 .ss-refresh:disabled{opacity:.5;cursor:default}
+.ss-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;padding:10px 0;border-bottom:.5px solid var(--dsw-alias-border-l2)}
+.ss-actions-right{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
 .ss-body{display:flex;height:min(70vh,860px);min-height:360px;min-width:0}
 .ss-list-pane{display:flex;flex:1;flex-direction:column;min-width:0}
 .ss-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px 10px 0;border-bottom:.5px solid var(--dsw-alias-border-l2)}
@@ -698,15 +697,12 @@ const STYLES = `
 .ss-placeholder-error{flex-direction:column;align-items:center;color:var(--dsw-alias-label-secondary)}
 .ss-error-text{margin:0;max-width:520px;color:var(--dsw-alias-state-error-primary)}
 .ss-banner{margin:8px 12px 0 0;padding:6px 10px;border-radius:8px;background:color-mix(in oklab,var(--dsw-alias-state-warn-primary) 14%,transparent);color:var(--dsw-alias-state-warn-label,var(--dsw-alias-label-secondary));font-size:12px}
-.ss-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0 16px;border-top:.5px solid var(--dsw-alias-border-l2)}
-.ss-foot-left{display:flex;align-items:center;gap:14px;min-width:0}
 .ss-formats{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:10px;background:var(--dsw-alias-bg-module-platform)}
 .ss-format{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
 .ss-format:hover:not(:disabled){color:var(--dsw-alias-label-primary)}
 .ss-format.is-active{background:var(--dsw-alias-bg-overlay);color:var(--dsw-alias-label-primary);box-shadow:var(--dsw-elevation-stroke,0 0 0 .5px var(--dsw-alias-border-l2))}
 .ss-format:disabled{opacity:.5;cursor:default}
-.ss-privacy{margin:0;color:var(--dsw-alias-label-caption);font-size:11px;line-height:16px}
-.ss-foot-actions{display:flex;align-items:center;gap:10px;min-width:0}
+.ss-privacy{color:var(--dsw-alias-label-caption);font-size:11.5px;line-height:16px}
 .ss-notice{max-width:340px;color:var(--dsw-alias-label-tertiary);font-size:11.5px;line-height:16px;overflow-wrap:anywhere}
 .ss-notice.is-error{color:var(--dsw-alias-state-error-primary)}
 .ss-button{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:30px;padding:0 12px;border:.5px solid var(--dsw-alias-border-l3);border-radius:15px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:12.5px;line-height:20px;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,opacity .15s}
@@ -719,8 +715,8 @@ const STYLES = `
 @keyframes ss-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.ss-spinner{animation-duration:2.4s}}
 .ss-page :focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
-@media (width<=860px){.ss-foot{flex-wrap:wrap}.ss-privacy{display:none}}
-@media (width<=560px){.ss-head{padding-top:12px}.ss-refresh span{display:none}.ss-foot-actions{flex-wrap:wrap}}
+@media (width<=860px){.ss-notice{max-width:220px}}
+@media (width<=560px){.ss-head{padding-top:12px}.ss-refresh span{display:none}.ss-actions{align-items:stretch}.ss-actions-right{justify-content:space-between}.ss-notice{max-width:100%;order:-1}}
 `
 
 // ── plugin ──────────────────────────────────────────────────────────────────

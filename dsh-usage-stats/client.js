@@ -6,11 +6,11 @@
  *  - the panel itself as the root `main` panel of that id (`main`, key `usage-stats`).
  *
  * The panel is a read-only projection of the Host aggregate: token usage, estimated
- * cost, per-model composition, and per-session detail. It loads
- * the full payload once per range, then polls the cheap `/live` endpoint every three
- * seconds; the poll only touches the summary, the range hero and the KPI row, while the
- * timeline, cost list and session table are memoized against the full payload so a poll
- * never re-renders them.
+ * cost, per-model composition, per-provider consumption, and per-session detail. It
+ * loads the full payload once per range, then polls the cheap `/live` endpoint every
+ * three seconds; the poll only touches the summary, the range hero and the KPI row,
+ * while the timeline, cost list, provider card and session table are memoized against
+ * the full payload so a poll never re-renders them.
  *
  * Built artifact format: the client module system executes only the factory below and
  * materializes it lazily. React comes from the platform module table, so this file
@@ -33,7 +33,7 @@ window.__ModuleLoader__.load({
     /** Panel id: sidebar entry id, main panel key, and the stylesheet's owner tag. */
     const PANEL_ID = 'usage-stats'
     /** Kept in sync with package.json; shown in the footer. */
-    const VERSION = '1.0.0'
+    const VERSION = '1.1.0'
     /** Cheap poll cadence while the panel is mounted and visible. */
     const POLL_MS = 3000
     /** The hosted scan can take a few seconds; never leave the refresh button spinning. */
@@ -166,6 +166,29 @@ window.__ModuleLoader__.load({
       modelsCount: '{count} 个模型',
       costRowLabel: '模型 {model}：{cost}，占比 {share}',
       costEmptyBody: '有会话用量之后，这里会显示各模型的成本构成。',
+      providerCardTitle: '供应商用量',
+      providerCardSubtitle: '按供应商拆解模型与会话 · {range}',
+      providerPickerLabel: '选择供应商',
+      providerFactTokens: 'Token',
+      providerFactCost: '成本',
+      providerFactCalls: '调用次数',
+      providerFactSessions: '会话数',
+      providerModelsTitle: '模型消耗',
+      providerSessionsTitle: '会话消耗',
+      providerSessionsCount: '{count} 个会话使用该供应商',
+      providerShare: '占供应商 {share}',
+      providerEmptyTitle: '本周期没有供应商用量',
+      providerEmptyBody: '换一个时间范围，或者点重新扫描再索引一次。',
+      providerHostStale: 'Host 端版本较旧，暂时拿不到按模型拆分的会话数据；更新插件并重启 DSH 后可用。',
+      providerSessionsEmpty: '这个供应商在本周期没有会话明细。',
+      providerSessionModels: '该供应商下的模型',
+      providerSessionShare: '占该供应商 {share}',
+      providerUnpricedNote: '该供应商有调用使用了兜底单价',
+      providerChipTitle: '{tokens} Token · {cost} · {sessions} 个会话',
+      providerModelColCalls: '调用',
+      providerModelColTokens: 'Token',
+      providerModelColCost: '成本',
+      providerModelColShare: '占比',
       pricesNote: '单价按每 1M Token 计（{currency}），可在 Host 配置的 prices / fallback 中修改',
       priceTitle: '单价（每 1M Token）：输入 {input} · 输出 {output} · 缓存读 {cacheRead} · 缓存写 {cacheWrite}',
       fallbackPriceTitle: '兜底单价（每 1M Token）：输入 {input} · 输出 {output} · 缓存读 {cacheRead} · 缓存写 {cacheWrite}',
@@ -306,6 +329,29 @@ window.__ModuleLoader__.load({
       modelsCount: '{count} models',
       costRowLabel: 'Model {model}: {cost}, {share} of the total',
       costEmptyBody: 'The per-model cost breakdown appears once sessions report usage.',
+      providerCardTitle: 'Provider usage',
+      providerCardSubtitle: 'Models and sessions by provider · {range}',
+      providerPickerLabel: 'Choose a provider',
+      providerFactTokens: 'Tokens',
+      providerFactCost: 'Cost',
+      providerFactCalls: 'Calls',
+      providerFactSessions: 'Sessions',
+      providerModelsTitle: 'Model consumption',
+      providerSessionsTitle: 'Session consumption',
+      providerSessionsCount: '{count} sessions use this provider',
+      providerShare: '{share} of this provider',
+      providerEmptyTitle: 'No provider usage in this period',
+      providerEmptyBody: 'Pick another range, or rescan to re-index the session logs.',
+      providerHostStale: 'The Host does not provide per-model session data yet; update the plugin and restart DSH.',
+      providerSessionsEmpty: 'No session used this provider in this period.',
+      providerSessionModels: 'Models used from this provider',
+      providerSessionShare: '{share} of this provider',
+      providerUnpricedNote: 'Some calls for this provider used the fallback price',
+      providerChipTitle: '{tokens} tokens · {cost} · {sessions} sessions',
+      providerModelColCalls: 'Calls',
+      providerModelColTokens: 'Tokens',
+      providerModelColCost: 'Cost',
+      providerModelColShare: 'Share',
       pricesNote: 'Prices are per 1M tokens ({currency}); edit prices / fallback in the Host config',
       priceTitle: 'Price per 1M tokens: in {input} · out {output} · cache read {cacheRead} · cache write {cacheWrite}',
       fallbackPriceTitle: 'Fallback price per 1M tokens: in {input} · out {output} · cache read {cacheRead} · cache write {cacheWrite}',
@@ -488,6 +534,18 @@ window.__ModuleLoader__.load({
       return cut === -1 ? key : key.slice(cut + 1)
     }
 
+    /** The provider half of `provider/model`, split on the first slash like the Host. */
+    function providerOf(key) {
+      const cut = key.indexOf('/')
+      return cut === -1 ? key : key.slice(0, cut)
+    }
+
+    /** The model half; any further slashes belong to the model, exactly as on the Host. */
+    function modelPartOf(key) {
+      const cut = key.indexOf('/')
+      return cut === -1 ? key : key.slice(cut + 1)
+    }
+
     /** Provider ids the panel can name; anything else is shown by its raw id. */
     const PROVIDER_LABEL_KEYS = {
       'deepseek-account': 'providerDeepseekAccount',
@@ -664,11 +722,17 @@ window.__ModuleLoader__.load({
       if (raw === null || typeof raw !== 'object') return null
       const key = str(raw.key)
       if (key === '') return null
+      const provider = str(raw.provider)
+      const model = str(raw.model)
       return {
         key,
+        // v2 splits the key for us; an older payload only carries the joined key.
+        provider: provider === '' ? providerOf(key) : provider,
+        model: model === '' ? modelPartOf(key) : model,
         calls: num(raw.calls),
         tokens: normalizeTokens(raw.tokens),
         costUsd: num(raw.costUsd),
+        unpricedCalls: num(raw.unpricedCalls),
         priced: raw.priced !== false,
       }
     }
@@ -680,6 +744,36 @@ window.__ModuleLoader__.load({
         if (model !== null) models.push(model)
       }
       return models
+    }
+
+    /**
+     * One session's range-scoped provider/model split. `null` is not "no usage": it
+     * means the Host predates the v2 payload, so the provider card can tell an old
+     * Host apart from an empty range instead of drawing zero rows.
+     */
+    function normalizeModelUsage(raw) {
+      if (raw === undefined || raw === null) return null
+      const usage = []
+      for (const item of listOf(raw)) {
+        if (item === null || typeof item !== 'object') continue
+        const key = str(item.key)
+        if (key === '') continue
+        const provider = str(item.provider)
+        const model = str(item.model)
+        usage.push({
+          key,
+          provider: provider === '' ? providerOf(key) : provider,
+          model: model === '' ? modelPartOf(key) : model,
+          calls: num(item.calls),
+          tokens: normalizeTokens(item.tokens),
+          costUsd: num(item.costUsd),
+          unpricedCalls: num(item.unpricedCalls),
+          priced: item.priced !== false,
+        })
+      }
+      // The Host sorts these by tokens desc; keep payload order so the card matches
+      // the ranking range.models uses.
+      return usage
     }
 
     /** A session's whole-life figures, kept alongside the range-scoped row numbers. */
@@ -724,6 +818,8 @@ window.__ModuleLoader__.load({
         costUsd: num(raw.costUsd),
         cacheHitRate,
         models: listOf(raw.models).filter((entry) => typeof entry === 'string' && entry !== ''),
+        // null on an old Host, so every provider reader can degrade instead of guess.
+        modelUsage: normalizeModelUsage(raw.modelUsage),
         priced: raw.priced !== false,
         allTime: normalizeAllTime(raw.allTime),
       }
@@ -1643,6 +1739,458 @@ window.__ModuleLoader__.load({
       )
     })
 
+    // ── provider usage ─────────────────────────────────────────────────────
+    // Pure regrouping of the range's models and each session's per-model split. The
+    // Host already priced everything, so the whole card renders from props: no request.
+
+    /** The vendor label in the UI language; unknown ids keep their raw id. */
+    function providerDisplayName(providerId, t) {
+      const labelKey = PROVIDER_LABEL_KEYS[providerId]
+      return labelKey === undefined ? providerId : t(labelKey)
+    }
+
+    /**
+     * Group range.models by provider for the chip picker and its model list.
+     * Session counts come from sessions[].modelUsage, counted once per provider and
+     * once per model even if a session reports duplicate rows. Views are ordered by
+     * cost then tokens, so the first view is the default (top-cost) chip.
+     */
+    function buildProviderViews(models, sessions) {
+      const views = new Map()
+      for (const model of models) {
+        let view = views.get(model.provider)
+        if (view === undefined) {
+          view = { provider: model.provider, tokens: 0, costUsd: 0, calls: 0, sessionsCount: 0, unpriced: false, models: [] }
+          views.set(model.provider, view)
+        }
+        view.tokens += model.tokens.total
+        view.costUsd += model.costUsd
+        view.calls += model.calls
+        if (model.unpricedCalls > 0 || !model.priced) view.unpriced = true
+        view.models.push({
+          key: model.key,
+          model: model.model,
+          calls: model.calls,
+          // The card only shows totals per model, so the split stays a plain number.
+          tokens: model.tokens.total,
+          costUsd: model.costUsd,
+          unpricedCalls: model.unpricedCalls,
+          priced: model.priced,
+          sessionsCount: 0,
+        })
+      }
+      const modelRows = new Map()
+      for (const view of views.values()) {
+        for (const row of view.models) modelRows.set(row.key, row)
+      }
+      for (const session of sessions) {
+        // null means an old Host, never a session that consumed nothing.
+        if (session.modelUsage === null) continue
+        const seenProviders = new Set()
+        const seenModels = new Set()
+        for (const entry of session.modelUsage) {
+          const view = views.get(entry.provider)
+          if (view === undefined) continue
+          if (!seenProviders.has(entry.provider)) {
+            seenProviders.add(entry.provider)
+            view.sessionsCount += 1
+          }
+          const row = modelRows.get(entry.key)
+          if (row === undefined || seenModels.has(entry.key)) continue
+          seenModels.add(entry.key)
+          row.sessionsCount += 1
+        }
+      }
+      const sorted = Array.from(views.values())
+      sorted.sort((left, right) => {
+        const byCost = right.costUsd - left.costUsd
+        return byCost !== 0 ? byCost : right.tokens - left.tokens
+      })
+      return sorted
+    }
+
+    /**
+     * The sessions that consumed providerId in the range, cost desc, with only that
+     * provider's models kept per session. A session that never touched it is dropped;
+     * an old Host (null modelUsage) yields none and the card shows the stale state.
+     */
+    function buildProviderSessions(sessions, providerId) {
+      const rows = []
+      for (const session of sessions) {
+        if (session.modelUsage === null) continue
+        const models = []
+        let tokens = 0
+        let costUsd = 0
+        let calls = 0
+        for (const entry of session.modelUsage) {
+          if (entry.provider !== providerId) continue
+          models.push({
+            key: entry.key,
+            model: entry.model,
+            calls: entry.calls,
+            tokens: entry.tokens.total,
+            costUsd: entry.costUsd,
+            priced: entry.priced,
+          })
+          tokens += entry.tokens.total
+          costUsd += entry.costUsd
+          calls += entry.calls
+        }
+        if (models.length === 0) continue
+        rows.push({
+          id: session.id,
+          title: session.title,
+          live: session.live,
+          subagent: session.subagent,
+          lastActivity: session.lastActivity,
+          tokens,
+          costUsd,
+          calls,
+          models,
+        })
+      }
+      return rows.sort((left, right) => right.costUsd - left.costUsd)
+    }
+
+    /** Sort keys of the provider sessions table; session and model columns stay fixed. */
+    const PROVIDER_SORTERS = {
+      tokens: (left, right) => left.tokens - right.tokens,
+      cost: (left, right) => left.costUsd - right.costUsd,
+      last: (left, right) => (left.lastActivity === null ? 0 : left.lastActivity) - (right.lastActivity === null ? 0 : right.lastActivity),
+    }
+
+    /** Expanded row: this session's consumption of the selected provider, per model. */
+    function ProviderSessionDetail(props) {
+      const { t, row, share } = props
+      return h(
+        'div',
+        { className: 'us-provider-session-detail' },
+        h('h3', null, t('providerSessionModels')),
+        row.models.map((model) =>
+          h(
+            'div',
+            { key: model.key, className: 'us-provider-session-model', 'data-model': model.model },
+            h('span', { title: model.key }, model.model),
+            h('span', { title: exact(model.calls) }, t('costCalls', { count: exact(model.calls) })),
+            h('span', { title: exact(model.tokens) }, compact(model.tokens)),
+            h('span', { title: usdExact(model.costUsd) }, usd(model.costUsd)),
+          ),
+        ),
+        h('p', { className: 'us-note us-provider-session-share' }, t('providerSessionShare', { share: percentOf(share) })),
+      )
+    }
+
+    /** One session row plus, when expanded, the per-model split the Host reported. */
+    function ProviderSessionRow(props) {
+      const { t, row, expanded, zebra, share, onToggle } = props
+      const detailId = 'us-provider-session-detail-' + row.id.replace(/[^A-Za-z0-9_-]/g, '_')
+      const title = row.title === '' ? t('untitled') : row.title
+      const primaryModel = row.models[0]
+      const extraModels = row.models.length - 1
+      return h(
+        React.Fragment,
+        null,
+        h(
+          'tr',
+          {
+            className: 'us-row us-provider-row' + (zebra ? ' is-zebra' : '') + (expanded ? ' is-expanded' : ''),
+            'data-session-id': row.id,
+          },
+          h(
+            'td',
+            { className: 'us-cell' },
+            h(
+              'div',
+              { className: 'us-session' },
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'us-expand',
+                  'aria-expanded': expanded,
+                  'aria-controls': expanded ? detailId : undefined,
+                  'aria-label': expanded ? t('collapseRow') : t('expandRow'),
+                  title: expanded ? t('collapseRow') : t('expandRow'),
+                  onClick: () => onToggle(row.id),
+                },
+                h(Glyph, { name: expanded ? 'chevronDown' : 'chevronRight', size: 11 }),
+              ),
+              h('span', { className: 'us-session-name', title }, title),
+              row.live ? h('span', { className: 'us-live' }, h('span', { className: 'us-live-dot', 'aria-hidden': 'true' }), t('liveBadge')) : null,
+              row.subagent ? h('span', { className: 'us-tag' }, t('subagentBadge')) : null,
+            ),
+          ),
+          h(
+            'td',
+            { className: 'us-cell' },
+            h(
+              'span',
+              { className: 'us-model', title: row.models.map((model) => model.key).join(', ') },
+              h('span', { className: 'us-trunc' }, primaryModel.model),
+              extraModels > 0 ? h('span', { className: 'us-more' }, '+' + extraModels) : null,
+            ),
+          ),
+          h('td', { className: 'us-cell us-cell-num' }, h('span', { className: 'us-num', title: exact(row.tokens) }, compact(row.tokens))),
+          h('td', { className: 'us-cell us-cell-num' }, h('span', { className: 'us-num', title: usdExact(row.costUsd) }, usd(row.costUsd))),
+          h(
+            'td',
+            { className: 'us-cell us-cell-time' },
+            h('span', { title: fullDateText(row.lastActivity) }, shortDateText(row.lastActivity)),
+          ),
+        ),
+        expanded
+          ? h(
+              'tr',
+              { className: 'us-row-detail' },
+              h('td', { className: 'us-cell us-detail-cell', colSpan: 5, id: detailId }, h(ProviderSessionDetail, { t, row, share })),
+            )
+          : null,
+      )
+    }
+
+    /**
+     * "Provider usage": one chip per provider, the active provider's facts, its model
+     * consumption and the sessions that consumed it. Everything derives from the
+     * already-priced payload; the selection is local state so a poll does not reset it.
+     */
+    const ProviderCard = React.memo(function ProviderCard(props) {
+      // prices is accepted for symmetry with the other cards and deliberately not
+      // read: the Host already applied it and this card only flags fallback pricing.
+      const { t, models, sessions, rangeLabel } = props
+      const [selected, setSelected] = useState(null)
+      const [sort, setSort] = useState({ key: 'cost', dir: 'desc' })
+      const [expandedId, setExpandedId] = useState(null)
+      const [page, setPage] = useState(0)
+
+      const views = useMemo(() => buildProviderViews(models, sessions), [models, sessions])
+      // An old Host ships models but no per-session split; drawing zeros for that would
+      // be a lie, so the card says the Host is stale instead.
+      const hostStale = useMemo(() => models.length > 0 && sessions.every((session) => session.modelUsage === null), [models, sessions])
+      // The top-cost provider is the default pick; a still-present selection wins so a
+      // range switch keeps the chip the user chose. Derived during render on purpose:
+      // no effect and no extra commit, and a stale selection revives if it returns.
+      const activeView = (selected === null ? undefined : views.find((view) => view.provider === selected)) ?? views[0] ?? null
+      const activeProvider = activeView === null ? null : activeView.provider
+      const rows = useMemo(() => (activeProvider === null ? [] : buildProviderSessions(sessions, activeProvider)), [sessions, activeProvider])
+      const sorted = useMemo(() => {
+        const compare = PROVIDER_SORTERS[sort.key]
+        const copy = rows.slice()
+        copy.sort((left, right) => (sort.dir === 'asc' ? compare(left, right) : compare(right, left)))
+        return copy
+      }, [rows, sort])
+      const pageSize = sorted.length > PAGE_LIMIT ? PAGE_SIZE : Math.max(1, sorted.length)
+      const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize))
+      const currentPage = Math.min(page, pageCount - 1)
+      const pageRows = sorted.slice(currentPage * pageSize, currentPage * pageSize + pageSize)
+
+      const onSort = useCallback((key) => {
+        setSort((current) => (current.key === key ? { key, dir: current.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' }))
+        setPage(0)
+      }, [])
+
+      const onPick = useCallback((provider) => {
+        setSelected(provider)
+        // The new provider's rows have their own ids and pages.
+        setExpandedId(null)
+        setPage(0)
+      }, [])
+
+      const toggle = useCallback((id) => {
+        setExpandedId((current) => (current === id ? null : id))
+      }, [])
+
+      const empty = models.length === 0 || activeView === null
+      const state = empty ? 'empty' : hostStale ? 'host-stale' : 'ready'
+
+      let body
+      if (empty) {
+        body = h(EmptyBlock, { title: t('providerEmptyTitle'), body: t('providerEmptyBody') })
+      } else if (hostStale) {
+        body = h(EmptyBlock, { icon: 'alert', title: t('providerSessionsTitle'), body: t('providerHostStale') })
+      } else {
+        const view = activeView
+        // Cost share while the provider has a cost; token share when nothing is
+        // priced, matching how the cost card picks its ranking base.
+        const byCost = view.costUsd > 0
+        const shareBase = byCost ? view.costUsd : view.tokens
+        const facts = [
+          { key: 'tokens', label: t('providerFactTokens'), value: compact(view.tokens), title: exact(view.tokens) },
+          { key: 'cost', label: t('providerFactCost'), value: usd(view.costUsd), title: usdExact(view.costUsd) },
+          { key: 'calls', label: t('providerFactCalls'), value: exact(view.calls), title: exact(view.calls) },
+          { key: 'sessions', label: t('providerFactSessions'), value: exact(view.sessionsCount), title: exact(view.sessionsCount) },
+        ]
+        body = h(
+          React.Fragment,
+          null,
+          h(
+            'div',
+            { className: 'us-provider-facts' },
+            facts.map((fact) =>
+              h(
+                'div',
+                { key: fact.key, className: 'us-provider-fact', 'data-fact': fact.key },
+                h('span', { className: 'us-provider-fact-label' }, fact.label),
+                h('span', { className: 'us-provider-fact-value', title: fact.title }, fact.value),
+              ),
+            ),
+          ),
+          view.unpriced
+            ? h('p', { className: 'us-note us-note-first' }, h('span', { className: 'us-cost-flag' }, t('providerUnpricedNote')))
+            : null,
+          h(
+            'div',
+            { className: 'us-provider-grid' },
+            h(
+              'section',
+              { className: 'us-provider-section us-provider-models' },
+              h('div', { className: 'us-provider-section-head' }, h('h3', null, t('providerModelsTitle'))),
+              // Column labels for the four bare numbers below; decorative because every
+              // value already carries an exact title and the row is not interactive.
+              h(
+                'div',
+                { className: 'us-provider-model-head', 'aria-hidden': 'true' },
+                h('span', null),
+                h('span', null, t('providerModelColCalls')),
+                h('span', null, t('providerModelColTokens')),
+                h('span', null, t('providerModelColCost')),
+                h('span', null, t('providerModelColShare')),
+              ),
+              view.models.map((model) => {
+                const share = shareBase > 0 ? clamp((byCost ? model.costUsd : model.tokens) / shareBase, 0, 1) : 0
+                return h(
+                  'div',
+                  { key: model.key, className: 'us-provider-model', 'data-model': model.model },
+                  h(
+                    'div',
+                    { className: 'us-provider-model-label' },
+                    h('span', { className: 'us-provider-model-name', title: model.key }, model.model),
+                    model.priced ? null : h('span', { className: 'us-cost-flag' }, t('costUnpriced')),
+                  ),
+                  h('span', { className: 'us-provider-model-stat us-num', title: t('providerFactCalls') }, exact(model.calls)),
+                  h('span', { className: 'us-provider-model-stat us-num', title: exact(model.tokens) }, compact(model.tokens)),
+                  h('span', { className: 'us-provider-model-stat us-num', title: usdExact(model.costUsd) }, usd(model.costUsd)),
+                  h('span', { className: 'us-provider-model-share', title: t('providerShare', { share: percentOf(share) }) }, percentOf(share)),
+                )
+              }),
+            ),
+            h(
+              'section',
+              { className: 'us-provider-section us-provider-sessions' },
+              h(
+                'div',
+                { className: 'us-provider-section-head' },
+                h('h3', null, t('providerSessionsTitle')),
+                h('span', null, t('providerSessionsCount', { count: exact(rows.length) })),
+              ),
+              h(
+                'div',
+                { className: 'us-table-wrap' },
+                h(
+                  'table',
+                  { className: 'us-table us-provider-table' },
+                  h('caption', { className: 'us-visually-hidden' }, t('providerSessionsTitle') + ' · ' + providerDisplayName(view.provider, t)),
+                  h(
+                    'colgroup',
+                    null,
+                    h('col', { className: 'us-col-session' }),
+                    h('col', { className: 'us-col-model' }),
+                    h('col', { className: 'us-col-num' }),
+                    h('col', { className: 'us-col-num' }),
+                    h('col', { className: 'us-col-time' }),
+                  ),
+                  h(
+                    'thead',
+                    null,
+                    h(
+                      'tr',
+                      null,
+                      h('th', { scope: 'col', className: 'us-th' }, t('colSession')),
+                      h('th', { scope: 'col', className: 'us-th' }, t('colModel')),
+                      h(SortHeader, { t, label: t('colTokens'), sortKey: 'tokens', sort, onSort, numeric: true }),
+                      h(SortHeader, { t, label: t('colCost'), sortKey: 'cost', sort, onSort, numeric: true }),
+                      h(SortHeader, { t, label: t('colLastActivity'), sortKey: 'last', sort, onSort }),
+                    ),
+                  ),
+                  h(
+                    'tbody',
+                    null,
+                    pageRows.length === 0
+                      ? h(
+                          'tr',
+                          null,
+                          h('td', { className: 'us-cell us-table-empty', colSpan: 5 }, h(EmptyBlock, { title: t('providerSessionsEmpty') })),
+                        )
+                      : pageRows.map((row, index) =>
+                          h(ProviderSessionRow, {
+                            key: row.id,
+                            t,
+                            row,
+                            zebra: index % 2 === 1,
+                            expanded: expandedId === row.id,
+                            share: byCost ? row.costUsd / view.costUsd : 0,
+                            onToggle: toggle,
+                          }),
+                        ),
+                  ),
+                ),
+              ),
+              pageCount > 1
+                ? h(
+                    'div',
+                    { className: 'us-pager' },
+                    h('button', { type: 'button', className: 'us-button', disabled: currentPage === 0, onClick: () => setPage(currentPage - 1) }, t('pagePrev')),
+                    h('span', { className: 'us-pager-info' }, t('pageOf', { page: exact(currentPage + 1), total: exact(pageCount) })),
+                    h('button', { type: 'button', className: 'us-button', disabled: currentPage >= pageCount - 1, onClick: () => setPage(currentPage + 1) }, t('pageNext')),
+                  )
+                : null,
+            ),
+          ),
+        )
+      }
+
+      return h(
+        'section',
+        {
+          className: 'us-card us-provider-card',
+          'data-provider': activeProvider === null ? undefined : activeProvider,
+          'data-state': state,
+        },
+        h(
+          'header',
+          { className: 'us-card-head' },
+          h(
+            'div',
+            null,
+            h('h2', { className: 'us-card-title' }, t('providerCardTitle')),
+            h('p', { className: 'us-card-sub' }, t('providerCardSubtitle', { range: rangeLabel })),
+          ),
+          views.length === 0
+            ? null
+            : h(
+                'div',
+                { className: 'us-provider-picker', role: 'group', 'aria-label': t('providerPickerLabel') },
+                views.map((view) => {
+                  const active = view.provider === activeProvider
+                  return h(
+                    'button',
+                    {
+                      key: view.provider,
+                      type: 'button',
+                      className: 'us-provider-chip' + (active ? ' is-active' : ''),
+                      'aria-pressed': active,
+                      'data-provider': view.provider,
+                      title: t('providerChipTitle', { tokens: compact(view.tokens), cost: usd(view.costUsd), sessions: exact(view.sessionsCount) }),
+                      onClick: () => onPick(view.provider),
+                    },
+                    providerDisplayName(view.provider, t),
+                  )
+                }),
+              ),
+        ),
+        body,
+      )
+    })
+
     // ── session table ──────────────────────────────────────────────────────
 
     function sessionMatches(session, needle) {
@@ -2303,8 +2851,18 @@ window.__ModuleLoader__.load({
             rangeTokens: fullPayload.range.tokens.total,
             rangeCost: fullPayload.range.costUsd,
           }),
-          // Both sections are single full-width cards stacked vertically.
+          // The cards are single full-width sections stacked vertically; the provider
+          // card sits between the model breakdown and the session table because it
+          // slices both of them by provider.
           h(CostCard, { t, localeStamp, models: fullPayload.range.models, prices: fullPayload.prices, rangeLabel }),
+          h(ProviderCard, {
+            t,
+            localeStamp,
+            models: fullPayload.range.models,
+            sessions: fullPayload.sessions,
+            prices: fullPayload.prices,
+            rangeLabel,
+          }),
           h(SessionsTable, { t, localeStamp, sessions: fullPayload.sessions, rangeLabel }),
           h(
             'footer',
@@ -2558,6 +3116,42 @@ window.__ModuleLoader__.load({
 @media (width<=1100px){.us-skel-table{display:flex}}
 @media (width<=760px){.us-search input{width:120px}.us-content{padding-bottom:48px}.us-kpi-value{font-size:22px;line-height:28px}.us-head{align-items:flex-start}.us-hero{padding:14px 16px}.us-hero-facts{padding-left:0;border-left:0}}
 @media (prefers-reduced-motion:reduce){.us-pill-dot,.us-icon-button.is-busy svg,.us-skel::after{animation:none}.us-slice,.us-cost-row,.us-seg-btn,.us-icon-button,.us-button,.us-search,.us-cell{transition:none}}
+/* Provider usage: chips, facts, then the model list beside its session table. */
+.us-provider-picker{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.us-provider-chip{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l3);border-radius:13px;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:18px;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.us-provider-chip:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.us-provider-chip.is-active{border-color:transparent;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-weight:500}
+.us-provider-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.us-provider-fact{display:flex;flex-direction:column;gap:1px;min-width:0;padding:8px 12px;border:.5px solid var(--dsw-alias-border-l3);border-radius:12px;background:var(--dsw-alias-bg-layer-2)}
+.us-provider-fact-label{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;white-space:nowrap}
+.us-provider-fact-value{min-width:0;font-size:18px;line-height:26px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.us-provider-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.35fr);gap:22px;align-items:start}
+.us-provider-section{display:flex;flex-direction:column;gap:8px;min-width:0}
+.us-provider-section-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 10px;margin:0}
+.us-provider-section-head h3{margin:0;font-size:13px;font-weight:600;line-height:20px}
+.us-provider-section-head span{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
+/* One fixed template so the model rows and their column labels line up exactly. */
+.us-provider-model,.us-provider-model-head{display:grid;grid-template-columns:minmax(0,1fr) 54px 76px 76px 44px;gap:10px;align-items:center}
+.us-provider-model{padding:5px 8px;border-radius:8px;transition:background .12s}
+.us-provider-model-head{padding:0 8px 2px;color:var(--dsw-alias-label-caption);font-size:11px;line-height:16px;white-space:nowrap}
+.us-provider-model-head>span:not(:first-child){text-align:right}
+.us-provider-model:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.us-provider-model-label{display:flex;align-items:center;gap:6px;min-width:0}
+.us-provider-model-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:18px}
+.us-provider-model-stat{color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.us-provider-model-share{width:44px;flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:18px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.us-provider-table{min-width:520px}
+.us-provider-table .us-col-session{width:40%}
+.us-provider-table .us-col-model{width:18%}
+.us-provider-table .us-col-num{width:12%}
+.us-provider-table .us-col-time{width:18%}
+.us-provider-session-detail{display:flex;flex-direction:column;gap:5px;padding:10px 12px;border:.5px solid var(--dsw-alias-border-l3);border-radius:12px;background:var(--dsw-alias-bg-layer-1)}
+.us-provider-session-detail h3{margin:0;color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500;line-height:18px}
+.us-provider-session-model{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:12px;font-size:12px;line-height:18px;font-variant-numeric:tabular-nums}
+.us-provider-session-model span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.us-provider-session-model span:not(:first-child){color:var(--dsw-alias-label-secondary);text-align:right;white-space:nowrap}
+.us-provider-session-share{margin:2px 0 0}
+@media (width<=900px){.us-provider-grid{grid-template-columns:minmax(0,1fr);gap:16px}}
 `
 
     // ── plugin ─────────────────────────────────────────────────────────────

@@ -1,9 +1,9 @@
 # 会话分享 · Session Share
 
-在 DSH 里挑当前对话中值得分享的消息，导出成 **PDF / PNG 长图 / Markdown**——表格会排版，用户输入的图片会内嵌，全部在浏览器本机完成，不上传任何内容。
+在 DSH 里挑当前对话中值得分享的消息，导出成 **PDF / PNG 长图 / Markdown**——表格会排版，用户输入的图片会内嵌，**LaTeX 公式会渲染**，全部在浏览器本机完成，不上传任何内容。
 
 - 包名：`@local/dsh-session-share`
-- 版本：`0.1.0`
+- 版本：`0.2.1`
 - 插件形态：Host 半（`index.js`，只读路由）+ Web 客户端（`client.js`，会话页签）
 - 入口：会话标题下方的 **分享** 页签（与「对话 / 轨迹 / 统计」并列）
 - 适配环境：DSH Desktop `0.2.2-rc.1`，Windows 11 实测
@@ -15,7 +15,8 @@
 
 ## 功能
 
-- **按条选择**：把当前会话拆成一条条「你 / 助手 / 工具调用」条目，每条单独勾选；支持全选、清空，底部实时显示已选条数与约多少字。
+- **按条选择**：把当前会话拆成一条条「你 / 助手 / 工具调用」条目，每条单独勾选；支持全选、清空，列表上方实时显示已选条数与约多少字。
+- **格式与导出在顶部**：Markdown / 图片 / PDF 的格式切换条和下载按钮排在标题下方、消息列表上方，长会话不用滚到底部就能换格式、点导出；导出结果（「已开始下载。共 N 页」或报错）也显示在这条工具栏里。
 - **工具调用可选**：默认不显示工具调用；打开「包含工具调用」后，连续的调用会折叠成一条「调用了 N 个工具」摘要并自动加入选择。
 - **时间戳可选**：打开「包含时间」后，导出内容会带上每条消息的时间。
 - **三种导出格式**：
@@ -23,6 +24,7 @@
   - **图片**：一张竖版 PNG 长图，900 CSS px 宽、2 倍像素密度；
   - **Markdown**：复制到剪贴板或下载 `.md`，保留原文的 Markdown 语法。
 - **排版能力**：支持标题、段落、列表、引用、代码块、水平线、**管道表格**、行内粗体/斜体/行内代码/链接/删除线；CJK 逐字换行，英文单词不拆断。
+- **LaTeX 公式**：行内 `$...$` / `\(...\)` 与独立公式 `$$...$$` / `\[...\]` / ```` ```math ```` 围栏都按 DSH 对话里的同一套分隔符识别，渲染成真正的数学排版（分数、根号、上下标、求和/积分、矩阵、cases、aligned、希腊字母、`\text` 等）；Markdown 导出保留原始 TeX 源码。
 - **图片内嵌**：用户消息里的图片会按原始宽高比缩放到内容宽度，画进 PDF / PNG；Markdown 只保留「图片 N 张」提示。
 - **纯本机**：浏览器负责选择、排版和生成文件；Host 只提供一个仅回环可访问的只读会话接口，不写任何文件。
 - **文件名友好**：下载文件名自动使用「会话标题-{YYYYMMDD-HHmm}.扩展名」，非法字符会被替换。
@@ -35,8 +37,8 @@
    - 打开「包含工具调用」后，工具调用摘要作为单独条目出现并自动勾选；
    - 「全选 / 清空」批量操作，「包含时间」控制时间戳；
    - 顶部「刷新」重新读取这个会话的最新消息。
-3. 底部选择格式：**PDF**（默认）/ **图片** / **Markdown**；Markdown 额外提供「复制 Markdown」。
-4. 点右下角主按钮导出，文件按「会话标题-时间」命名落到浏览器默认下载目录。
+3. 顶部的格式切换条选择 **PDF**（默认）/ **图片** / **Markdown**；Markdown 额外提供「复制 Markdown」。公式不需要额外开关：勾选的消息里只要含 LaTeX，PNG/PDF 就会自动排版（Markdown 保留原始 TeX）。
+4. 点顶部右侧的主按钮导出，文件按「会话标题-时间」命名落到浏览器默认下载目录；导出结果显示在同一个工具栏里（PDF 会带上「共 N 页」）。
 5. 若提示「历史可能不完整」，稍等片刻再点「刷新」；较长的会话只列最近的部分消息时会显示截断提示。
 
 ## 安装
@@ -82,7 +84,7 @@ DSH `0.2.2` 会在安装依赖后自动把组合包加入 profile 的 `dsh.profi
 ## 安装后确认生效
 
 1. **插件页**：「已安装插件」列表里出现 `@local/dsh-session-share`，开关为开启状态。
-2. **会话页签**：打开任意会话，标题下方页签行出现 **分享**；点开能看到「分享当前对话」标题、消息列表与格式选择。
+2. **会话页签**：打开任意会话，标题下方页签行出现 **分享**；点开能看到「分享当前对话」标题，标题下方是格式切换条与下载按钮，再往下是消息列表。
 3. **Host 路由**（可选，排错用）：在浏览器所在端口请求只读接口，应返回 `version: 1` 的 JSON：
 
    ```powershell
@@ -116,6 +118,7 @@ DSH `0.2.2` 会在安装依赖后自动把组合包加入 profile 的 `dsh.profi
 - **不联网**：没有遥测、没有 CDN、没有第三方脚本；插件的全部代码随包分发，导出全程在浏览器本机完成。
 - **导出文件**：只通过浏览器 `Blob` + 隐藏 `<a download>` 下载到本机（或写入剪贴板），不经过 Host，不上传。
 - **图片内嵌有上限**：一次分享最多内嵌 **24 张**用户输入图片，原始字节合计最多 **8 MB**；图片从 DSH 附件存储读取成 `data:` URL 放进内存，不落盘。读取失败或已缺失的图片会被跳过，分享本身不会失败。
+- **公式渲染不联网**：LaTeX 由插件自带代码（`src/latex.js`，无第三方库）转成 MathML，再交给浏览器内嵌的数学排版引擎测量、栅格化；不加载 CDN、不下载数学字体、不请求任何远程资源。
 - **不导出内部数据**：系统提示、注入上下文、推理过程、压缩记录等内部事件不会出现在导出里。
 
 ## 文件结构
@@ -124,14 +127,16 @@ DSH `0.2.2` 会在安装依赖后自动把组合包加入 profile 的 `dsh.profi
 | --- | --- |
 | `index.js` | Host 半：注册只读路由，读取实时/已存会话，回环鉴权与错误响应 |
 | `src/transcript.js` | Host 半纯函数：会话事件 → 分享载荷（可单测，无 Node API） |
-| `src/export-core.js` | 浏览器纯函数：Markdown 序列化、Canvas 排版、PNG / PDF 生成 |
+| `src/export-core.js` | 浏览器纯函数：Markdown 序列化、LaTeX 分隔符解析、Canvas 排版、PNG / PDF 生成 |
+| `src/latex.js` | 浏览器纯函数：TeX 子集 → MathML 转换 + 公式栅格化（测量、缩放、回退） |
 | `src/client-shell.js` | 浏览器 UI：`conversation.view` 页签的注册与全部交互 |
-| `client.js` | **生成文件**（约 92 KB）：`tools/build-client.mjs` 把上面两个 `src/` 模块内联进模块工厂 |
+| `client.js` | **生成文件**（约 162 KB）：`tools/build-client.mjs` 把上面三个 `src/` 模块内联进模块工厂 |
 | `tools/build-client.mjs` | 唯一的构建步骤：生成 `client.js` 并校验源文件结构 |
 | `tools/test-transcript.mjs` | 折叠逻辑单元测试（含真实会话日志可选用例） |
-| `tools/test-export-core.mjs` | Markdown / 排版 / PNG / PDF 结构测试（stub DOM） |
+| `tools/test-export-core.mjs` | Markdown / 排版 / LaTeX 解析 / PNG / PDF 结构测试（stub DOM） |
+| `tools/test-latex.mjs` | TeX → MathML 转换与栅格化降级测试 |
 | `tools/test-host.mjs` | Host 路由测试（stub Cordis 服务与请求/响应） |
-| `notes/transcript.md`、`notes/export-core.md` | 开发期的调研笔记与设计说明 |
+| `notes/transcript.md`、`notes/export-core.md`、`notes/latex.md` | 开发期的调研笔记与设计说明 |
 | `cordis.patch.yml` | 组合补丁：向 profile 插入 `session-share` 这一行 |
 | `package.json` | 包声明：`dsh.bundle.patch` 与客户端注入配置 |
 | `locale/zh.json`、`locale/en.json` | 插件管理页显示的中/英文标题与描述 |
@@ -180,6 +185,7 @@ DSH `0.2.2` 会在安装依赖后自动把组合包加入 profile 的 `dsh.profi
 - **Markdown**：直接拼接 `# 标题`、`> 工作目录 / 导出时间 / 消息数 / 模型` 元数据行、逐条 `### 你 / 助手 / 工具`、可选时间与工具调用列表，结尾是导出标记；文本按原文输出。
 - **排版中间层**：把 Markdown 子集解析成块（段落、标题、列表、引用、代码块、水平线、管道表格），由一个排版引擎生成「矩形 + 文本段」的绘制指令；PNG 与 PDF 复用同一套排版。
 - **表格**：按内容测量分配列宽，支持列对齐、表头底色、行分隔线与单元格内行内 Markdown 换行。
+- **LaTeX 公式**：先把对话里的数学分隔符（与 DSH 聊天一致：`$...$`、`\(...\)`、`$$...$$`、`\[...\]`、```` ```math ```` 围栏）解析成 TeX 子集 AST，再转换成 MathML 交给浏览器原生排版；公式在隐藏容器里测量尺寸后，经 SVG `<foreignObject>` 栅格化成位图，作为「带基线信息的行内/块级盒子」参与排版。位图按所在正文/标题字号等比缩放，超宽的行内公式会自动缩小；转换失败、命令不受支持或浏览器没有 MathML 时，自动回退为显示原始 TeX，绝不会因此中断导出。
 - **图片**：`data:` URL 先解码成 `Image`，再按内容宽度等比缩放绘制；解码失败就跳过该图，不阻塞导出。
 - **PNG**：900 CSS px 宽、2 倍像素密度（约 1800 px 宽），内容最高 8000 CSS px；超长内容会整体缩小、按像素高度不超过 16000 px 控制（缩放下限 0.2 倍），界面提示「图片已按比例缩小」。
 - **PDF**：A4 竖版（595.28 × 841.89 pt，48 pt 边距），每页先栅格化为 1240 × 1754 的 Canvas、再编码为 JPEG（质量 0.9）；PDF 由手写写入器封装（`%PDF-1.4`、精确 `/Length`、xref 表、`/DCTDecode` 图片流），每页底部有「DSH 会话分享 · 标题」和「第 n / N 页」。
@@ -190,24 +196,25 @@ DSH `0.2.2` 会在安装依赖后自动把组合包加入 profile 的 `dsh.profi
 `client.js` 是**生成文件**，不要直接编辑。修改浏览器代码后：
 
 ```powershell
-node tools/build-client.mjs   # 把 src/export-core.js + src/client-shell.js 内联进 client.js
+node tools/build-client.mjs   # 把 src/latex.js + src/export-core.js + src/client-shell.js 内联进 client.js
 node --check client.js        # 语法检查生成结果
 ```
 
-构建脚本会校验 `src/export-core.js` 必须定义 `createExportCore()`、`src/client-shell.js` 必须定义 `inject` 与 `apply`，并拒绝已包含 `__ModuleLoader__` 的片源。仓库已提交构建好的 `client.js`，所以从仓库安装不需要执行构建。
+构建脚本会校验 `src/latex.js` 必须定义 `createLatexEngine()`、`src/export-core.js` 必须定义 `createExportCore()`、`src/client-shell.js` 必须定义 `inject` 与 `apply`，并拒绝已包含 `__ModuleLoader__` 的片源。仓库已提交构建好的 `client.js`，所以从仓库安装不需要执行构建。
 
 ## 开发与测试
 
-三个测试都不依赖浏览器/DOM（`test-export-core.mjs` 会 stub `document` / canvas / `Blob` / `URL`），可直接用 Node 运行：
+四个测试都不依赖浏览器/DOM（`test-export-core.mjs` 会 stub `document` / canvas / `Blob` / `URL`，`test-latex.mjs` 用敌意 DOM stub 验证降级路径），可直接用 Node 运行：
 
 ```powershell
 cd D:\github\dsh-plugins\dsh-session-share
 node tools/test-transcript.mjs    # 事件折叠（含真实会话日志用例，读不到时 SKIP）
-node tools/test-export-core.mjs   # Markdown 输出、PNG 尺寸/缩放、PDF 结构与 /Length
+node tools/test-export-core.mjs   # Markdown 输出、LaTeX 分隔符/公式收集、PNG 尺寸/缩放、PDF 结构
+node tools/test-latex.mjs         # TeX → MathML 转换、样式/环境覆盖、栅格化失败降级
 node tools/test-host.mjs          # Host 路由：载荷、404/405、非回环 403、合并与图片
 ```
 
-当前版本在本机（DSH Desktop `0.2.2-rc.1`）实测：**三个测试共 102 项断言全部通过**（transcript 16、export-core 54、host 32），均以 `SUMMARY` / `passed, failed` 汇总，失败时退出码非 0。
+当前版本在本机（DSH Desktop `0.2.2-rc.1`，2026-11-09）实测：**四个测试共 176 项断言全部通过**（transcript 16、export-core 88、latex 40、host 32），均以 `SUMMARY` / `passed, failed` 汇总，失败时退出码非 0。另外用无头 Chromium 跑了真实导出端到端验证：含行内/独立公式、矩阵、cases、aligned、表格与代码块的会话可正常生成 PNG 长图与 2 页 PDF，公式按正文基线对齐、跨页不拆行。
 
 - `tools/test-transcript.mjs` 会挑选 `$DSH_HOME/sessions` 下最新的可读日志做一次真实折叠；没有日志的机器会优雅 SKIP 而不是失败。
 - 开发笔记在 `notes/`（事件词表、折叠规则、导出 API 与设计取舍），改代码前建议先读；仓库级开发约定见 [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md)。
@@ -226,6 +233,9 @@ node tools/test-host.mjs          # Host 路由：载荷、404/405、非回环 4
 - **只分享「会话里实际发生的内容」**：系统提示、推理过程、压缩记录等内部事件不会出现；工具调用以摘要条目呈现，不含完整结果文本。
 - **图片范围**：只内嵌**用户输入图片**（助手目前不产出图片），且只进 PDF / 图片；Markdown 保留文字与图片数量，不含图片数据。
 - **图片体积上限**：单次最多 24 张 / 8 MB 原始字节；超限或存储已缺失的图片只显示数量提示，不阻塞导出。
+- **LaTeX 是实用子集**：覆盖常见数学写作（分数、根号、上下标、求和/积分、`\left...\right`、矩阵/cases/aligned、希腊字母、常用运算符与 `\text`），但不是完整 TeX：`\newcommand`、自定义宏、`\color`、`\tag` 编号样式等不保证；无法识别的命令会原样显示为文本，不会中断导出。
+- **公式是位图**：PNG / PDF 里的公式由浏览器排版后栅格化绘制（PDF 本身也是整页栅格图），公式文字不可选中；不同公式各自栅格化一次，单次分享最多渲染 200 个公式，公式越多导出越慢。
+- **独立公式的作用域**：`$$` / `\[` / ```` ```math ```` 围栏的独立排版只在消息顶层行生效；引用块、列表项里的 `$$...$$` 会按行内公式渲染（内容不丢、字号较小）。超宽的行内公式会等比缩小到一行内。
 - **超长会话**：单次最多折叠 20,000 个事件，更老的事件会被丢弃并提示截断；PNG 有 16000 px 像素高度上限，极长内容会按比例缩小文字（PDF 不受此限，页数随内容增长）。
 - **PDF 是栅格图**：可看可打印但文字不可选中/搜索；这是当前实现为保证中文渲染一致而做的取舍。
 - **不完整历史**：极新、尚未落盘的事件通过内存窗口合并；两边都拿不到完整历史时会显示「历史可能不完整，稍后刷新」。
@@ -247,6 +257,9 @@ node tools/test-host.mjs          # Host 路由：载荷、404/405、非回环 4
 **Q：图片没有出现在 PDF / PNG 里。**
 只内嵌**用户输入图片**；超过 24 张 / 8 MB 的部分、附件已删除或损坏的图片会被跳过（列表里仍显示数量提示）。Markdown 按设计不内嵌图片。
 
+**Q：导出的 PNG / PDF 里公式还是原始 TeX 文本？**
+说明公式没有走渲染：先检查分隔符是否配对（`$...$`、`$$...$$`、`\(...\)`、`\[...\]`）。不支持的 TeX 命令会按原文显示（这是有意的降级，不会让导出失败）；若整条消息都如此，确认 DSH 版本够新——Chromium 109+ 才内置 MathML，`DSH Desktop 0.2.2-rc.1` 满足。Markdown 导出按设计永远保留原始 TeX。
+
 **Q：导出的 Markdown 能直接粘贴到别处吗？**
 可以。Markdown 是纯文本（行内图片以「图片 N 张」表示）；需要带图片的成品时用 PNG / PDF。
 
@@ -256,7 +269,8 @@ node tools/test-host.mjs          # Host 路由：载荷、404/405、非回环 4
 ## 兼容性
 
 - 实测环境：**DSH Desktop `0.2.2-rc.1`**，Windows 11，DSH 自带 Node `24.21.0`；插件在本机 `desktop` profile 中已安装并启用（`include:session-share`、`fiberPhase: active`）。
-- 本机验证记录（2026-11-07）：三个测试共 102 项断言通过；`GET /dsh-session-share/transcript`（不带 `sessionId`）返回 `version: 1`、`source: "query"` 的真实会话载荷（标题、cwd、模型、条目与 `attachments` 映射）。
+- 本机验证记录（2026-11-09）：四个测试共 176 项断言通过；并用无头 Chromium 对含 LaTeX 的会话跑通 PNG/PDF 端到端导出（公式渲染、基线对齐、跨页不拆行、无公式时回退原文）。`GET /dsh-session-share/transcript`（不带 `sessionId`）返回 `version: 1`、`source: "query"` 的真实会话载荷（标题、cwd、模型、条目与 `attachments` 映射）。
+- 公式渲染需要浏览器支持 **MathML Core**（Chromium 109+）和系统数学字体（Windows 为 Cambria Math）；DSH Desktop `0.2.2-rc.1` 内嵌 Chromium 满足。渲染在浏览器本机完成，不联网、不加载 CDN 或远程字体。
 - Host 半需要 DSH 的 `webServer` 服务；会话读取优先用 `sessionQuery` / 内存 `sessions`，缺失时回退 `sessionPersistence`；内嵌图片需要可选的 `attachments` 服务。
 - 浏览器半依赖 `conversation.view` 插槽与 `locale` 服务，并声明 `immediately: true`；它只要求 Chromium 级别的 Canvas / Blob / Clipboard 能力。
 - 更老的 DSH 版本可能缺少上述插槽或服务，未做兼容与测试；升级 DSH 后如页签或导出异常，先查看 [docs/COMPATIBILITY.md](../docs/COMPATIBILITY.md) 与 [docs/INSTALL.md](../docs/INSTALL.md) 的排错章节。

@@ -1114,6 +1114,10 @@ function buildAggregate(ctx, state, days) {
   for (const view of sessionViews) if (view.figures.requests > 0) rangeSessionsWithUsage += 1
   const sessions = sessionViews.slice(0, state.config.maxSessions).map(({ summary, figures }) => {
     const cacheBase = figures.tokens.input + figures.tokens.cacheRead
+    // One sort feeds both model lists: `models` is the shape older clients read,
+    // `modelUsage` adds the per-model numbers. Deriving both from the same entries
+    // keeps the order and the membership of the two fields from drifting apart.
+    const modelEntries = [...figures.models.entries()].sort((left, right) => right[1].tokens.total - left[1].tokens.total)
     return {
       id: summary.id,
       title: summary.title,
@@ -1133,7 +1137,22 @@ function buildAggregate(ctx, state, days) {
       tokens: tokenView(figures.tokens),
       costUsd: figures.costUsd,
       cacheHitRate: cacheBase > 0 ? figures.tokens.cacheRead / cacheBase : 0,
-      models: [...figures.models.entries()].sort((left, right) => right[1].tokens.total - left[1].tokens.total).map(([key]) => key),
+      // Range-scoped like the figures above, so the panel can split one session by
+      // model without a second request; tokens-desc is also the `models` order.
+      modelUsage: modelEntries.map(([key, entry]) => {
+        const slash = key.indexOf('/')
+        return {
+          key,
+          provider: slash === -1 ? key : key.slice(0, slash),
+          model: slash === -1 ? key : key.slice(slash + 1),
+          calls: entry.calls,
+          tokens: tokenView(entry.tokens),
+          costUsd: entry.costUsd,
+          unpricedCalls: entry.unpricedCalls,
+          priced: entry.unpricedCalls === 0,
+        }
+      }),
+      models: modelEntries.map(([key]) => key),
       priced: figures.unpricedCalls === 0,
       // The session's whole life, for the detail panel's reference line.
       allTime: {
@@ -1170,7 +1189,7 @@ function buildAggregate(ctx, state, days) {
   }
 
   return {
-    version: 3,
+    version: 4,
     revision: state.revision,
     generatedAt: now,
     scan,
