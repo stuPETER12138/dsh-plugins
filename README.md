@@ -11,7 +11,7 @@
 | [dsh-completion-notify](dsh-completion-notify/README.md) | `@local/dsh-completion-notify` · 1.0.0 | 会话跑完任务、出错、中断，或卡在等你授权/回答时，由 DSH 主进程弹出**操作系统通知**，标题写明是哪个会话 | 设置 → 通用 → 通知开关（+ 测试按钮） |
 | [dsh-session-share](dsh-session-share/README.md) | `@local/dsh-session-share` · 0.2.0 | 挑选当前会话里要分享的消息，导出为 **Markdown / PNG 长图 / PDF**，图片、表格与 **LaTeX 公式**都会排版，全部在本机完成 | 会话标题下方的「分享」页签 |
 | [dsh-sticky-wall](dsh-sticky-wall/README.md) | `@local/dsh-sticky-wall` · 1.2.0 | 左侧栏的**便签墙**：随手记灵感、置顶、搜索、六种便签纸颜色，支持撤销删除；长短不一的便签按最短列**交错紧密排列**（瀑布流） | 左侧栏「便签墙」 |
-| [dsh-style-studio](dsh-style-studio/README.md) | `@local/dsh-style-studio` · 2.1.0 | 左侧栏的**视觉风格页面**：一键切换**六套应用级视觉风格**（毛玻璃、水墨书画、深空极夜、苔原森野、像素街机、石墨黑白），毛玻璃支持**自定义图片背景**与模糊 / 雾面 / 面板浓度调节，自动适配浅色/深色 | 左侧栏「视觉风格」 |
+| [dsh-style-studio](dsh-style-studio/README.md) | `@local/dsh-style-studio` · 2.2.0 | 左侧栏的**视觉风格页面**：一键切换**六套应用级视觉风格**（毛玻璃、水墨书画、深空极夜、苔原森野、像素街机、石墨黑白），毛玻璃支持**自定义图片背景**与模糊 / 雾面 / 面板浓度调节，底图与模糊层做了降采样优化，自动适配浅色/深色 | 左侧栏「视觉风格」 |
 | [dsh-usage-stats](dsh-usage-stats/README.md) | `@local/dsh-usage-stats` · 1.1.0 | 用本机真实会话日志统计 **Token 用量与估算成本**：时间线、模型成本构成、逐会话明细，以及按供应商拆解的模型/会话消耗 | 左侧栏「用量统计」 |
 
 ## 安装

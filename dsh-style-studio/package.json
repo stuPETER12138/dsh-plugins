@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-style-studio",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "description": "Style Studio: a left-sidebar page with six application-wide visual styles, including a frosted-glass theme with a custom image backdrop.",
   "type": "module",

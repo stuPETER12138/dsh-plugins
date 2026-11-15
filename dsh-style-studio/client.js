@@ -31,7 +31,7 @@ window.__ModuleLoader__.load({
   factory: (require) => {
     const React = require('react')
     const h = React.createElement
-    const { useEffect, useRef, useState } = React
+    const { memo, useEffect, useRef, useState } = React
 
     /** Locale namespace owned by this plugin. */
     const NS = 'styleStudio'
@@ -62,6 +62,12 @@ window.__ModuleLoader__.load({
     const DB_KEY = 'current'
     /** Largest wallpaper the page accepts. */
     const MAX_IMAGE_BYTES = 24 * 1024 * 1024
+    /** Longest edge kept for a stored backdrop; bigger photos are scaled down. */
+    const MAX_WALLPAPER_EDGE = 2048
+    /** A small image that needs no scaling keeps its original bytes. */
+    const KEEP_WALLPAPER_BYTES = 1.2 * 1024 * 1024
+    /** Re-encode quality for a scaled backdrop (WebP). */
+    const WALLPAPER_QUALITY = 0.85
     /** How long a status message stays visible. */
     const STATUS_MS = 4200
     /** How long a removed wallpaper is held for undo. */
@@ -94,7 +100,7 @@ window.__ModuleLoader__.load({
       blurLabel: '背景模糊',
       hazeLabel: '雾面浓度',
       densityLabel: '面板浓度',
-      privacy: '图片存在本机 IndexedDB 中，不会上传，也不写任何文件。',
+      privacy: '图片存在本机 IndexedDB 中，不会上传，也不写任何文件。超过 2048px 的大图会先缩小再保存，界面更流畅。',
       processing: '正在处理图片…',
       applied: '背景已更新',
       appliedSwitched: '背景已更新，并切换到毛玻璃主题',
@@ -148,7 +154,7 @@ window.__ModuleLoader__.load({
       blurLabel: 'Backdrop blur',
       hazeLabel: 'Haze',
       densityLabel: 'Panel density',
-      privacy: 'The image is stored in this browser (IndexedDB). Nothing is uploaded and no file is written.',
+      privacy: 'The image is stored in this browser (IndexedDB). Nothing is uploaded and no file is written. Photos over 2048px are scaled down before saving to keep the interface fast.',
       processing: 'Processing image…',
       applied: 'Backdrop updated',
       appliedSwitched: 'Backdrop updated and Frosted Glass applied',
@@ -730,12 +736,18 @@ window.__ModuleLoader__.load({
      * The first paints the image (or gradient) and blurs it; the second is the
      * scheme-aware haze that keeps text readable. The plugin stylesheet's
      * `background-blur`/`haze` variables come from the page's two sliders.
+     *
+     * The image layer is rendered at half viewport size and scaled up 2x: a blur
+     * of `blur / 2` before the transform reads as `blur` on screen, so the filter
+     * covers a quarter of the pixels and the GPU texture is a quarter the size.
+     * The 54% box with a -2% offset keeps the upscaled, blurred edges outside the
+     * viewport, so no soft border shows.
      */
     const GLASS_LAYER_CSS = `
-body[${STYLE_ATTR}="glass"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:var(${IMAGE_VAR},var(--dss-glass-gradient));background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(var(${BLUR_VAR},18px)) saturate(1.06);transform:scale(1.06);transform-origin:center}
-body[${STYLE_ATTR}="glass"]::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:rgb(247 250 254 / var(${HAZE_VAR},40%))}
-body[${STYLE_ATTR}="glass"][data-ds-dark-theme]::before{filter:blur(var(${BLUR_VAR},18px)) saturate(1.02) brightness(.6)}
-body[${STYLE_ATTR}="glass"][data-ds-dark-theme]::after{background:rgb(8 10 14 / var(${HAZE_VAR},40%))}
+body[${STYLE_ATTR}="glass"]::before{content:"";position:fixed;top:-2%;left:-2%;width:54%;height:54%;z-index:-1;pointer-events:none;background-image:var(${IMAGE_VAR},var(--dss-glass-gradient));background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(calc(var(${BLUR_VAR},18px) / 2)) saturate(1.06);transform:scale(2);transform-origin:top left}
+body[${STYLE_ATTR}="glass"]::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:rgb(247 250 254 / var(${HAZE_VAR},38%))}
+body[${STYLE_ATTR}="glass"][data-ds-dark-theme]::before{filter:blur(calc(var(${BLUR_VAR},18px) / 2)) saturate(1.02) brightness(.6)}
+body[${STYLE_ATTR}="glass"][data-ds-dark-theme]::after{background:rgb(8 10 14 / var(${HAZE_VAR},38%))}
 `
 
     /** Page chrome; every color is a host token so it follows the chosen style. */
@@ -785,7 +797,7 @@ body[data-ds-dark-theme] .sss-thumb-dark{display:flex}
 .sss-bg-art.is-dragging{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-state-business-primary) 16%,transparent)}
 .sss-bg-art:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .sss-bg-art:disabled{opacity:.62;cursor:default}
-.sss-bg-image{position:absolute;inset:-6%;z-index:-2;background-image:var(${IMAGE_VAR},var(--dss-glass-gradient));background-position:center;background-size:cover;filter:blur(var(${BLUR_VAR},18px)) saturate(1.04);transform:scale(1.04)}
+.sss-bg-image{position:absolute;top:-6%;left:-6%;width:56%;height:56%;z-index:-2;background-image:var(${IMAGE_VAR},var(--dss-glass-gradient));background-position:center;background-size:cover;filter:blur(calc(var(${BLUR_VAR},18px) / 2)) saturate(1.04);transform:scale(2);transform-origin:top left}
 .sss-bg-haze{position:absolute;inset:0;z-index:-1;background:rgb(247 250 254 / var(${HAZE_VAR},40%))}
 body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},40%))}
 .sss-bg-hint{display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);margin:12px;padding:6px 12px;border-radius:var(--dsw-radius-sm);background:color-mix(in srgb,var(--dsw-alias-bg-overlay) 88%,transparent);color:var(--dsw-alias-label-secondary);box-shadow:var(--dsw-shadow-lv1);font-size:12px;line-height:18px;backdrop-filter:blur(12px)}
@@ -852,6 +864,10 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
     let pendingRemoval = null
     /** Debounce handle for slider persistence. */
     let persistTimer = null
+    /** Pending animation frame for slider updates. */
+    let glassFrame = 0
+    /** Last backdrop values written to the body. */
+    let appliedGlassSignature = ''
     /** Disposer of the registered override layer. */
     let overrideDisposer = null
     /** Section instances observing the selection. */
@@ -945,9 +961,17 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
       dispose()
     }
 
-    /** Write the backdrop tuning to the body; the stylesheet turns it into layers. */
+    /**
+     * Write the backdrop tuning to the body; the stylesheet turns it into layers.
+     * A signature check keeps unchanged values from touching the body's style,
+     * which would otherwise force a document-wide recalculation.
+     */
     function applyGlassVars() {
       if (typeof document === 'undefined' || document.body === null) return
+      const signature =
+        glassSettings.gradient + '|' + glassSettings.blur + '|' + glassSettings.haze + '|' + glassSettings.density
+      if (signature === appliedGlassSignature) return
+      appliedGlassSignature = signature
       const body = document.body
       body.setAttribute(BG_ATTR, glassSettings.gradient)
       body.style.setProperty(BLUR_VAR, glassSettings.blur + 'px')
@@ -957,6 +981,7 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
 
     /** Remove every body-side trace of the backdrop. */
     function clearGlassVars() {
+      appliedGlassSignature = ''
       if (typeof document === 'undefined' || document.body === null) return
       const body = document.body
       body.removeAttribute(BG_ATTR)
@@ -999,12 +1024,26 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
       }, 300)
     }
 
-    /** Merge backdrop tuning, apply it, and tell the page. */
+    /** Apply one batched slider update and tell the page. */
+    function flushGlassUpdate() {
+      glassFrame = 0
+      applyGlassVars()
+      notifySubscribers()
+    }
+
+    /**
+     * Merge backdrop tuning. Slider input arrives faster than the display
+     * refreshes, so the body write and the React update are coalesced into one
+     * animation frame; the value itself is already stored for persistence.
+     */
     function updateGlass(patch) {
       glassSettings = { ...glassSettings, ...patch }
-      applyGlassVars()
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        if (glassFrame === 0) glassFrame = window.requestAnimationFrame(flushGlassUpdate)
+      } else {
+        flushGlassUpdate()
+      }
       scheduleGlassPersist()
-      notifySubscribers()
     }
 
     // ── wallpaper storage ────────────────────────────────────────────────
@@ -1158,10 +1197,36 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
     async function loadWallpaper() {
       try {
         const record = await readWallpaperRecord()
-        if (record !== null) useWallpaperRecord(record)
+        if (record === null) return
+        useWallpaperRecord(record)
+        void shrinkStoredWallpaper(record)
       } catch (_error) {
         /* no stored wallpaper, or IndexedDB is blocked */
       }
+    }
+
+    /**
+     * Re-encode a wallpaper stored before the downscaling cap existed, so an
+     * earlier large photo also becomes the smaller texture on the next load.
+     */
+    async function shrinkStoredWallpaper(record) {
+      if (record.width <= MAX_WALLPAPER_EDGE && record.size <= KEEP_WALLPAPER_BYTES) return
+      const prepared = await prepareWallpaper(record.blob)
+      if (!prepared.ok || prepared.blob === record.blob) return
+      if (wallpaperRecord !== record) return
+      const next = {
+        ...record,
+        blob: prepared.blob,
+        size: prepared.blob.size,
+        width: prepared.width,
+        height: prepared.height,
+      }
+      try {
+        await writeWallpaperRecord(next)
+      } catch (_error) {
+        /* the in-memory record still works; the stored copy updates next time */
+      }
+      if (wallpaperRecord === record) useWallpaperRecord(next)
     }
 
     /** Read an image's pixel dimensions without keeping it in memory. */
@@ -1193,6 +1258,65 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
     }
 
     /**
+     * Shrink one picked image to at most `MAX_WALLPAPER_EDGE` pixels on its long
+     * edge and re-encode it when it is heavy. The backdrop is blurred, so the
+     * smaller texture looks the same while cutting decode time, GPU memory, and
+     * the cost of every blur re-render. Small, already-suitable files keep their
+     * original bytes; anything the browser cannot decode falls back to the
+     * original only when a plain `<img>` probe can still read its dimensions.
+     */
+    async function prepareWallpaper(file) {
+      let bitmap = null
+      if (typeof createImageBitmap === 'function') {
+        try {
+          bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+        } catch (_error) {
+          bitmap = null
+        }
+      }
+      if (bitmap === null) {
+        const size = await measureImage(file)
+        if (size === null) return { ok: false, messageKey: 'readFailed' }
+        return { ok: true, blob: file, width: size.width, height: size.height }
+      }
+      const sourceWidth = bitmap.width
+      const sourceHeight = bitmap.height
+      const fallback = () => ({ ok: true, blob: file, width: sourceWidth, height: sourceHeight })
+      try {
+        const longest = Math.max(sourceWidth, sourceHeight)
+        const scale = longest > MAX_WALLPAPER_EDGE ? MAX_WALLPAPER_EDGE / longest : 1
+        if (scale === 1 && file.size <= KEEP_WALLPAPER_BYTES) return fallback()
+        const width = Math.max(1, Math.round(sourceWidth * scale))
+        const height = Math.max(1, Math.round(sourceHeight * scale))
+        let context = null
+        let canvas = null
+        try {
+          canvas = document.createElement('canvas')
+          context = canvas.getContext('2d')
+        } catch (_error) {
+          context = null
+        }
+        if (canvas === null || context === null) return fallback()
+        canvas.width = width
+        canvas.height = height
+        context.drawImage(bitmap, 0, 0, width, height)
+        const blob = await new Promise((resolve) => {
+          try {
+            canvas.toBlob((value) => resolve(value), 'image/webp', WALLPAPER_QUALITY)
+          } catch (_error) {
+            resolve(null)
+          }
+        })
+        if (blob === null) return fallback()
+        return { ok: true, blob, width, height }
+      } catch (_error) {
+        return fallback()
+      } finally {
+        if (typeof bitmap.close === 'function') bitmap.close()
+      }
+    }
+
+    /**
      * Apply one picked image and remember it when storage allows.
      * @returns a status the page localizes: `{ ok, stored?, switched?, messageKey? }`.
      */
@@ -1201,14 +1325,14 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
         return { ok: false, messageKey: 'notImage' }
       }
       if (file.size > MAX_IMAGE_BYTES) return { ok: false, messageKey: 'tooLarge' }
-      const size = await measureImage(file)
-      if (size === null) return { ok: false, messageKey: 'readFailed' }
+      const prepared = await prepareWallpaper(file)
+      if (!prepared.ok) return prepared
       const record = {
-        blob: file,
+        blob: prepared.blob,
         name: typeof file.name === 'string' ? file.name : '',
-        size: file.size,
-        width: size.width,
-        height: size.height,
+        size: prepared.blob.size,
+        width: prepared.width,
+        height: prepared.height,
         addedAt: Date.now(),
       }
       flushPendingRemoval()
@@ -1338,8 +1462,11 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
 
     // ── views ─────────────────────────────────────────────────────────────
 
+    /** Applying a style from the grid; hoisted so memoized cards keep stable props. */
+    const pickStyle = (id) => applyStyle(id)
+
     /** One style option: a split light/dark mini window, its name, and a short note. */
-    function StyleCard({ preset, active, t, onPick }) {
+    const StyleCard = memo(function StyleCard({ preset, active, t, onPick }) {
       const thumb = (scheme) => {
         const palette = scheme === 'dark' ? preset.dark : preset.light
         return h(
@@ -1384,7 +1511,7 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
         ),
         active ? h('span', { className: 'sss-style-check', 'aria-hidden': 'true' }, h(CheckGlyph, { size: 12 })) : null,
       )
-    }
+    })
 
     /** One labelled range input with its current value. */
     function RangeField({ id, label, value, min, max, step, suffix, onChange }) {
@@ -1717,7 +1844,7 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
                     preset,
                     t,
                     active: preset.id === state.activeId,
-                    onPick: (id) => applyStyle(id),
+                    onPick: pickStyle,
                   }),
                 ),
               ),
@@ -1783,6 +1910,10 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
           releaseOverrides()
           themeApi = null
           flushPendingRemoval()
+          if (glassFrame !== 0 && typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+            window.cancelAnimationFrame(glassFrame)
+            glassFrame = 0
+          }
           if (persistTimer !== null) {
             window.clearTimeout(persistTimer)
             persistTimer = null

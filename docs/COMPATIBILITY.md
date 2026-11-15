@@ -9,13 +9,13 @@
 | `dsh-completion-notify` | 1.0.0 | ✅ 通过 | Host + 浏览器 |
 | `dsh-session-share` | 0.2.0 | ✅ 通过 | Host + 浏览器 |
 | `dsh-sticky-wall` | 1.2.0 | ✅ 通过 | 纯浏览器 |
-| `dsh-style-studio` | 2.1.0 | ✅ 静态 + 模块冒烟通过（侧栏 / 毛玻璃界面待目视） | 纯浏览器 |
+| `dsh-style-studio` | 2.2.0 | ✅ 静态 + 模块冒烟通过（侧栏 / 毛玻璃界面待目视） | 纯浏览器 |
 | `dsh-usage-stats` | 1.1.0 | ✅ 通过 | Host + 浏览器 |
 
 - 验证方式：在**隔离的临时 `DSH_HOME` + 临时 profile** 中，用 DSH 自带运行时（`resources/runtime/cli/bin/dsh.cmd`，`0.2.2-rc.1`）逐个安装 5 个插件，检查依赖安装、组合包选择、`--dump-config` 组合结果、Host 半加载、Web 服务启动以及各插件 client bundle 是否由 `/plugins` 路由提供。记录见 [VERIFICATION.md](VERIFICATION.md)。
 - `dsh-session-share` 0.2.0 新增 LaTeX 公式渲染：该版本通过 4 个单元测试套件（176 项断言）与无头 Chromium 端到端导出验证（PNG/PDF、基线对齐、跨页不拆行、无 MathML 时回退原文）；隔离 profile 的安装/加载全链路沿用 `VERIFICATION.md` 中 0.1.0 的记录（Host 半与插件清单未变，浏览器半为新增）。
 - `dsh-sticky-wall` 1.2.0 把便签墙从等高网格改成按最短列落位的瀑布流：在隔离 profile 中安装后由无头 Edge 做交互与几何断言（列宽 / 14px 间距 / 同列紧贴 / 无重叠 / 墙高 / 缩放重排 / 新增与编辑时的重排），并与 1.1.0 的网格布局做对照；记录见 `VERIFICATION.md` 的增量记录。运行位置与插槽未变，仍是纯浏览器插件。
-- `dsh-style-studio` 2.1.0 在 2.0.0 的基础上修可读性：毛玻璃的卡片 / 输入框 / 气泡 / 侧栏改为 92–97% 不透明的实心磨砂面板（只有页面底色保留半透明），并新增「面板浓度」滑杆（60–100%，默认 100%）整体缩放面板 alpha。已通过 `node --check`、`verify-repo` 的清单/本地化/README/索引检查与一次性模块冒烟测试（样式规则、三个滑杆、两个插槽注册、选图 / 移除 / 卸载清理、中英文案键齐备）；**未**重跑隔离 profile 的安装 / 启动链路，也未做无头浏览器量测，面板实际观感需在运行中的应用里目视确认，记录见 `VERIFICATION.md` 的增量记录。
+- `dsh-style-studio` 2.2.0 做性能优化：上传的长边 > 2048px 或 > 1.2 MB 的底图先缩小并重编码为 WebP；底图模糊层按半分辨率渲染（54% 视口、半径减半、放大 2 倍）；滑杆输入用 `requestAnimationFrame` 合帧并跳过未变化的变量写入；六张风格卡 `React.memo` 化，另把默认雾面从 34% 调到 38%。行为有变化：动图只保留首帧、原图不再逐字节保存。冒烟测试新增了半分辨率 CSS、合帧顺序、降采样尺寸与 WebP 编码的断言。
 - `dsh-usage-stats` 1.1.0 新增「供应商用量」卡片（按供应商拆解模型与会话消耗）：在隔离 profile 中用真实会话数据的只读副本，完成载荷 v4（`sessions[].modelUsage`）在 7 天 / 30 天 / 全部时间三个范围的不变量校验与无头 Edge 面板交互端到端验证（71/71 断言，含供应商切换、会话展开、存量卡片回归），记录见 `VERIFICATION.md` 的增量记录；Host 未新增路由，安装/加载链路沿用 1.0.0 的记录。
 - 组合包没有声明 `engines.dsh` 版本门槛（避免预发布版本范围把用户挡在门外），因此安装前请**自行确认 DSH 版本**；低于 `0.2.2-rc.1` 的版本大概率缺少下面列出的 API。
 
