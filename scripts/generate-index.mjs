@@ -64,7 +64,20 @@ const PLUGINS = [
   {
     dir: 'dsh-style-studio',
     category: 'interface',
-    keywords: ['theme', 'style', 'appearance', 'skin', 'dark', '主题', '风格'],
+    keywords: [
+      'theme',
+      'style',
+      'appearance',
+      'skin',
+      'glass',
+      'glassmorphism',
+      'wallpaper',
+      'dark',
+      '主题',
+      '风格',
+      '毛玻璃',
+      '背景',
+    ],
   },
   {
     dir: 'dsh-usage-stats',

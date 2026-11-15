@@ -1,8 +1,8 @@
 {
   "name": "@local/dsh-style-studio",
-  "version": "1.3.0",
+  "version": "2.1.0",
   "private": true,
-  "description": "Style Studio: a Visual styles row in Settings → General with five application-wide visual styles.",
+  "description": "Style Studio: a left-sidebar page with six application-wide visual styles, including a frosted-glass theme with a custom image backdrop.",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -22,7 +22,10 @@
     "theme",
     "style",
     "appearance",
-    "dark-mode"
+    "dark-mode",
+    "glassmorphism",
+    "wallpaper",
+    "sidebar"
   ],
   "exports": {
     ".": "./index.js",
@@ -48,8 +51,8 @@
       "immediately": true,
       "inject": [
         "@deepseek-ai/dsh-client-ui-theme",
-        "@deepseek-ai/dsh-client-ui-settings",
-        "@deepseek-ai/dsh-client-ui-settings-general",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-locale"
       ]
     }

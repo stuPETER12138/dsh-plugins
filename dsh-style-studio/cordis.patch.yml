@@ -1,6 +1,6 @@
 # Style Studio bundle: one row. The Host half is empty; the browser half
-# registers the Visual styles row in Settings → General and the token layers
-# that reskin the whole application.
+# registers the left-sidebar panel and its page, and the token layers that
+# reskin the whole application (including the frosted-glass backdrop).
 - insert:
     - id: style-studio
       name: '@local/dsh-style-studio'
