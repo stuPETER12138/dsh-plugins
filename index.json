@@ -63,11 +63,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1794750241,
+          "publishTimestamp": 1794753277,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "633366f39452dd7719c1a4d1f1bd5a6e56eb1766",
+            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
             "path": "dsh-completion-notify"
           }
         }
@@ -109,11 +109,11 @@
       "versions": [
         {
           "version": "0.2.1",
-          "publishTimestamp": 1794750241,
+          "publishTimestamp": 1794753277,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "633366f39452dd7719c1a4d1f1bd5a6e56eb1766",
+            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
             "path": "dsh-session-share"
           }
         }
@@ -151,11 +151,11 @@
       "versions": [
         {
           "version": "1.2.0",
-          "publishTimestamp": 1794750241,
+          "publishTimestamp": 1794753277,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "633366f39452dd7719c1a4d1f1bd5a6e56eb1766",
+            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
             "path": "dsh-sticky-wall"
           }
         }
@@ -197,12 +197,12 @@
       },
       "versions": [
         {
-          "version": "2.1.0",
-          "publishTimestamp": 1794750241,
+          "version": "2.2.0",
+          "publishTimestamp": 1794753277,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "633366f39452dd7719c1a4d1f1bd5a6e56eb1766",
+            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
             "path": "dsh-style-studio"
           }
         }
@@ -240,11 +240,11 @@
       "versions": [
         {
           "version": "1.1.0",
-          "publishTimestamp": 1794750241,
+          "publishTimestamp": 1794753277,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "633366f39452dd7719c1a4d1f1bd5a6e56eb1766",
+            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
             "path": "dsh-usage-stats"
           }
         }
