@@ -125,7 +125,7 @@ async function main() {
 
   // (5) Accents, spacing, functions, negation.
   check('tex: accents -> mover/munder',
-    containsAll(engine.toMathML('\\hat{x}+\\overline{AB}', false), ['<mover', 'accent="true"']));
+    containsAll(engine.toMathML('\\hat{x}+\\overline{AB}', false), ['<mover', 'accent="true"'])); // deslop-ignore 10 — \overline is a LaTeX accent in a test fixture.
   check('tex: spacing commands -> mspace',
     engine.toMathML('a\\,b\\quad c', false).includes('<mspace width="0.1667em"/>'));
   check('tex: function names are upright with a thin space',

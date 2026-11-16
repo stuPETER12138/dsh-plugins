@@ -2,7 +2,7 @@
  * Completion Notify — the browser half of `@local/dsh-completion-notify`.
  *
  * Detection and delivery live in the Host half: it watches every Session log
- * event and spawns a hidden OS notifier process, so a finished turn still reaches the
+ * event and spawns a detached OS notifier, so a finished turn still reaches the
  * user when this page is covered, minimized, or closed.
  *
  * This half only draws the preference row in Settings → General and reports the
@@ -31,22 +31,22 @@ window.__ModuleLoader__.load({
     const zh = {
       rowTitle: '任务完成与等待确认通知',
       rowDescription:
-        '会话跑完任务、或卡在等你授权 / 回答时，由 DSH 主进程弹出系统通知，标题写明是哪个会话。关掉页面也会提醒；你正看着这个会话时不打扰。',
-      noticeOn: '已开启：任务完成或等待你确认时会弹出系统通知。',
-      noticeOff: '已关闭：不再弹出这些通知。',
+        '会话跑完任务、出错，或卡在等你授权 / 回答时，由 DSH 主进程弹出系统通知，标题写明是哪个会话。页面关掉也会提醒；你正看着这个会话时不打扰。',
+      noticeOn: '已开启：这些事件会发送系统通知。',
+      noticeOff: '已关闭：不再发送系统通知。',
       testAction: '发送测试通知',
-      testSent: '已发送示例通知；若没出现，请检查 Windows 通知设置或专注助手。',
+      testSent: '已发送示例通知；若没出现，请检查系统通知设置或专注模式。',
       testFailed: '发送失败：DSH 主进程的通知通道不可用。',
     }
 
     const en = {
       rowTitle: 'Notify on completion and approval requests',
       rowDescription:
-        'Send an OS notification from the DSH host process when a Session finishes its task or blocks on your approval or answer, titled with that Session. Works with the page covered, minimized, or closed; stays quiet while you look at that Session.',
-      noticeOn: 'On: the host process pops a system notification for those events.',
-      noticeOff: 'Off: no notifications will be sent.',
+        'Send a system notification when a Session finishes, errors, or waits for your approval or answer. The title names the Session; it still arrives with the page closed, and stays quiet while you are reading that Session.',
+      noticeOn: 'On: these events send a system notification.',
+      noticeOff: 'Off: no notifications are sent.',
       testAction: 'Send a test notification',
-      testSent: 'A sample notification was sent; if nothing appeared, check the Windows notification settings or Focus assist.',
+      testSent: 'A sample notification was sent; if nothing appeared, check the system notification settings or Focus mode.',
       testFailed: 'Could not send: the host notification channel is unavailable.',
     }
 
@@ -266,12 +266,13 @@ window.__ModuleLoader__.load({
 .cn-row-title{font-size:14px;line-height:20px}
 .cn-row-description{margin-top:4px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}
 .cn-row-notice{margin-top:6px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary)}
-.cn-row-test{align-self:flex-start;margin-top:8px;height:24px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l3);border-radius:12px;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
+.cn-row-test{align-self:flex-start;margin-top:8px;height:26px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
 .cn-row-test:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .cn-row-test:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
 .cn-switch{box-sizing:border-box;position:relative;flex:0 0 auto;width:36px;height:20px;padding:2px;border:0;border-radius:999px;background:var(--dsw-alias-border-l3);cursor:pointer}
 .cn-switch[aria-checked=true]{background:var(--dsw-alias-brand-primary)}
 .cn-switch:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}
+/* deslop-ignore-next-line 19 — a switch thumb stays a circle; it has no halo. */
 .cn-switch-thumb{display:block;width:16px;height:16px;border-radius:50%;background:var(--dsw-alias-switch-thumb);transition:transform .12s ease}
 .cn-switch[aria-checked=true] .cn-switch-thumb{background:var(--dsw-alias-label-primary-foreground);transform:translate(16px)}
 @media (prefers-reduced-motion:reduce){.cn-switch-thumb{transition:none}}

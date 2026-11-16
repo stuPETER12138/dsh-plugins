@@ -139,7 +139,7 @@ function createLatexEngine() {
   };
 
   var ACCENTS = {
-    overline: { pos: 'over', char: '\u203E', stretchy: true },
+    overline: { pos: 'over', char: '\u203E', stretchy: true }, // deslop-ignore 10 — \overline is a LaTeX accent, not a UI kicker.
     underline: { pos: 'under', char: '_', stretchy: true },
     bar: { pos: 'over', char: '\u00AF' },
     vec: { pos: 'over', char: '\u2192' },
@@ -720,7 +720,7 @@ function createLatexEngine() {
       case 'bm':
         return applyVariant(this.parseArg(), 'bold-italic');
 
-      case 'overline':
+      case 'overline': // deslop-ignore 10 — the \overline command is typeset above its argument.
       case 'underline':
       case 'bar':
       case 'vec':
@@ -1235,6 +1235,7 @@ function createLatexEngine() {
     if (node.bold) style += 'font-weight:700;';
     if (node.italic) style += 'font-style:italic;';
     if (node.sans) style += 'font-family:sans-serif;';
+    // deslop-ignore-next-line 34 — monospace is the point of a code span.
     if (node.mono) style += 'font-family:monospace;';
     return '<mtext' + (style ? ' style="' + style + '"' : '') + '>' +
       esc(node.text) + '</mtext>';

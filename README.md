@@ -108,6 +108,7 @@ dsh-plugins/
 │  ├─ INSTALL.md            # 安装 / 升级 / 卸载 / 排错
 │  ├─ COMPATIBILITY.md      # 兼容性矩阵与版本说明
 │  ├─ DEVELOPMENT.md        # 插件结构、开发、构建与发布流程
+│  ├─ DESIGN.md             # 五个插件共用的视觉规则与 kill-ai-slop 复查记录
 │  └─ VERIFICATION.md       # 在 DSH 0.2.2-rc.1 上的实测记录
 ├─ scripts/
 │  ├─ generate-index.mjs    # 重新生成 index.json
@@ -119,7 +120,7 @@ dsh-plugins/
 
 ## 开发
 
-想改代码或新增插件：见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。提交前跑一遍：
+想改代码或新增插件：见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)；界面规则（颜色、字号、圆角、动效与文案）见 [docs/DESIGN.md](docs/DESIGN.md)。提交前跑一遍：
 
 ```powershell
 node scripts/verify-repo.mjs

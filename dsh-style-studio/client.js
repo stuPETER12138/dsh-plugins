@@ -26,6 +26,10 @@
  * @module @local/dsh-style-studio/client
  */
 
+// deslop-ignore-file 06 — the glass theme's built-in backdrops are product
+// artwork (a frosted pane needs something underneath it), not page atmosphere;
+// they are single-temperature, low-contrast fields and never carry page chrome.
+
 window.__ModuleLoader__.load({
   id: '@local/dsh-style-studio',
   factory: (require) => {
@@ -93,8 +97,8 @@ window.__ModuleLoader__.load({
       dropHint: '拖入图片，或点击选择',
       dropActive: '松开即可设为背景',
       replaceHint: '点击更换，或拖入新的图片',
-      noImage: '还没有自定义图片，当前使用下面的内置渐变。',
-      gradientsLabel: '内置渐变',
+      noImage: '还没有自定义图片，当前使用下面的内置背景。',
+      gradientsLabel: '内置背景',
       gradientsHint: '没有图片时使用',
       gradientsInactiveHint: '移除图片后使用',
       blurLabel: '背景模糊',
@@ -113,20 +117,20 @@ window.__ModuleLoader__.load({
       tooLarge: '图片太大了，请选择 24 MB 以内的图片',
       readFailed: '这张图片读不出来，请换一张',
       'style.glass.name': '毛玻璃',
-      'style.glass.desc': '现代简约的磨砂玻璃：半透明面板、柔和的圆角与细描边，配一张自己的图片，界面悬浮在模糊的背景之上。',
+      'style.glass.desc': '现代磨砂面板：半透明表面、细描边与小圆角，配一张自己的图片，界面悬浮在模糊的背景之上。',
       'style.ink.name': '水墨书画',
       'style.ink.desc': '宣纸暖白与墨色文字，朱砂、石绿、赭石相间，通篇霞鹜文楷；深色是砚池夜墨，象牙色字与低饱和朱砂，安静而克制。',
       'style.midnight.name': '深空极夜',
-      'style.midnight.desc': '幽蓝深底与冷冽星辉，玻璃质感与柔光，适合夜间长谈。',
+      'style.midnight.desc': '幽蓝深底与冷冽星辉，深色面板适合夜间使用。',
       'style.forest.name': '苔原森野',
-      'style.forest.desc': '苔绿与奶油的自然配色，圆润柔和的边界，像一本林间手账。',
+      'style.forest.desc': '苔绿与奶油的自然配色，克制的圆角，像一本林间手账。',
       'style.pixel.name': '像素街机',
       'style.pixel.desc': '8-bit 街机配色：霓虹洋红与青蓝、直角边框与硬边投影，像一台老式游戏机的界面。',
       'style.mono.name': '石墨黑白',
       'style.mono.desc': '纯黑白灰与利落直角，高对比的极简编辑部风格。',
-      'gradient.aurora': '极光',
+      'gradient.aurora': '雾蓝',
       'gradient.sand': '暖沙',
-      'gradient.dusk': '暮色',
+      'gradient.dusk': '暮青',
     }
 
     const en = {
@@ -147,8 +151,8 @@ window.__ModuleLoader__.load({
       dropHint: 'Drop an image, or click to choose',
       dropActive: 'Release to use this image',
       replaceHint: 'Click to replace, or drop a new image',
-      noImage: 'No custom image yet — one of the built-in gradients is showing.',
-      gradientsLabel: 'Built-in gradients',
+      noImage: 'No custom image yet — a built-in backdrop is showing.',
+      gradientsLabel: 'Built-in backdrops',
       gradientsHint: 'Used when no image is set',
       gradientsInactiveHint: 'Used once the image is removed',
       blurLabel: 'Backdrop blur',
@@ -167,18 +171,18 @@ window.__ModuleLoader__.load({
       tooLarge: 'That image is too large — pick one under 24 MB',
       readFailed: 'That image could not be read — please try another',
       'style.glass.name': 'Frosted Glass',
-      'style.glass.desc': 'Modern minimal glass: translucent panels, soft rounded corners, and hairline borders. Add a photo and the interface floats above a blurred backdrop.',
+      'style.glass.desc': 'Frosted panels over a blurred backdrop, with hairline borders and a small radius scale. Set a photo to make it yours; light and dark use separate palettes.',
       'style.ink.name': 'Ink & Brush',
       'style.ink.desc': 'Rice-paper warmth and ink-black type set in LXGW WenKai, with cinnabar, malachite, and ochre accents. Its night mode is inkstone black, ivory text, and muted cinnabar — quiet and restrained.',
       'style.midnight.name': 'Midnight Sky',
-      'style.midnight.desc': 'Deep navy grounds, cool starlight blues, glassy surfaces, and a soft glow for long nights.',
+      'style.midnight.desc': 'Deep navy grounds, cool starlight blues, and dark panels for long nights.',
       'style.forest.name': 'Moss & Meadow',
-      'style.forest.desc': 'Moss green and cream, softly rounded edges — the calm of a field notebook.',
+      'style.forest.desc': 'Moss green and cream with restrained corners — the calm of a field notebook.',
       'style.pixel.name': 'Pixel Arcade',
       'style.pixel.desc': '8-bit arcade colors: neon magenta and cyan, square corners, and hard pixel shadows — an old game console, rebuilt.',
       'style.mono.name': 'Graphite Mono',
       'style.mono.desc': 'Pure black, white, and gray with crisp square corners — editorial minimalism.',
-      'gradient.aurora': 'Aurora',
+      'gradient.aurora': 'Mist',
       'gradient.sand': 'Warm sand',
       'gradient.dusk': 'Dusk',
     }
@@ -238,13 +242,13 @@ window.__ModuleLoader__.load({
     const PIXEL_CODE_FONT =
       '"Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", "Fira Code", monospace'
     const PIXEL_BRAND_FONT = '"Cascadia Mono", Consolas, "PingFang SC", "Microsoft YaHei", monospace'
-    /** Glass keeps the platform UI face: no display fonts, tight and neutral. */
+    /** Glass uses the platform UI face — no display fonts, no webfont, tight and neutral. */
     const GLASS_TEXT_FONT =
-      '"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif'
+      '-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif'
     const GLASS_CODE_FONT =
       '"JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, "Fira Code", "Liberation Mono", Menlo, monospace'
     const GLASS_BRAND_FONT =
-      '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", sans-serif'
+      '-apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", sans-serif'
 
     // ── the six styles ────────────────────────────────────────────────────
 
@@ -318,16 +322,16 @@ window.__ModuleLoader__.load({
         },
         common: {
           fontText: GLASS_TEXT_FONT, fontCode: GLASS_CODE_FONT, fontBrand: GLASS_BRAND_FONT,
-          radiusXs: '5px', radiusSm: '9px', radiusMd: '13px', radiusLg: '18px',
-          radiusXl: '24px', radiusPanel: '28px', shadow1: '0 1px 2px 0 rgb(15 23 42 / 5%)',
-          shadow2: '0 8px 24px 0 rgb(15 23 42 / 9%), 0 1px 2px 0 rgb(15 23 42 / 6%)',
-          shadow3: '0 24px 56px 0 rgb(15 23 42 / 16%), 0 3px 10px 0 rgb(15 23 42 / 8%)',
-          menuBackdrop: 'blur(28px) saturate(180%)',
+          radiusXs: '4px', radiusSm: '8px', radiusMd: '12px', radiusLg: '16px',
+          radiusXl: '20px', radiusPanel: '24px', shadow1: '0 1px 2px 0 rgb(15 23 42 / 5%)',
+          shadow2: '0 4px 12px -2px rgb(15 23 42 / 10%), 0 1px 2px 0 rgb(15 23 42 / 6%)',
+          shadow3: '0 12px 28px -6px rgb(15 23 42 / 18%), 0 2px 6px 0 rgb(15 23 42 / 8%)',
+          menuBackdrop: 'blur(24px) saturate(140%)',
         },
         commonDark: {
           shadow1: '0 1px 2px 0 rgb(0 0 0 / 36%)',
-          shadow2: '0 10px 28px 0 rgb(0 0 0 / 42%), 0 1px 3px 0 rgb(0 0 0 / 26%)',
-          shadow3: '0 26px 64px 0 rgb(0 0 0 / 52%), 0 4px 14px 0 rgb(0 0 0 / 28%)',
+          shadow2: '0 6px 18px -2px rgb(0 0 0 / 44%), 0 1px 3px 0 rgb(0 0 0 / 26%)',
+          shadow3: '0 14px 32px -6px rgb(0 0 0 / 54%), 0 3px 10px 0 rgb(0 0 0 / 28%)',
         },
       },
       {
@@ -359,15 +363,15 @@ window.__ModuleLoader__.load({
         common: {
           fontText: WENKAI_TEXT_FONT, fontCode: WENKAI_CODE_FONT, fontBrand: WENKAI_BRAND_FONT,
           radiusXs: '2px', radiusSm: '6px', radiusMd: '10px',
-          radiusLg: '14px', radiusXl: '18px', radiusPanel: '22px', shadow1: '0 1px 2px 0 rgb(32 26 18 / 8%)',
-          shadow2: '0 6px 18px 0 rgb(32 26 18 / 10%), 0 1px 3px 0 rgb(32 26 18 / 6%)',
-          shadow3: '0 20px 48px 0 rgb(32 26 18 / 14%), 0 3px 10px 0 rgb(32 26 18 / 8%)',
-          menuBackdrop: 'blur(20px) saturate(120%)',
+          radiusLg: '14px', radiusXl: '18px', radiusPanel: '20px', shadow1: '0 1px 2px 0 rgb(32 26 18 / 8%)',
+          shadow2: '0 4px 12px -2px rgb(32 26 18 / 11%), 0 1px 3px 0 rgb(32 26 18 / 6%)',
+          shadow3: '0 12px 28px -6px rgb(32 26 18 / 16%), 0 2px 8px 0 rgb(32 26 18 / 8%)',
+          menuBackdrop: 'blur(16px) saturate(120%)',
         },
         commonDark: {
           shadow1: '0 2px 6px 0 rgb(0 0 0 / 40%)',
-          shadow2: '0 10px 28px 0 rgb(0 0 0 / 46%), 0 2px 6px 0 rgb(0 0 0 / 24%)',
-          shadow3: '0 24px 64px 0 rgb(0 0 0 / 55%), 0 4px 14px 0 rgb(0 0 0 / 30%)',
+          shadow2: '0 6px 18px -2px rgb(0 0 0 / 46%), 0 2px 6px 0 rgb(0 0 0 / 24%)',
+          shadow3: '0 14px 32px -6px rgb(0 0 0 / 52%), 0 3px 10px 0 rgb(0 0 0 / 28%)',
         },
       },
       {
@@ -397,11 +401,11 @@ window.__ModuleLoader__.load({
           error: '#FF7285', toastBg: '#1B2942', toastFg: '#EAF2FF', thumb: '#8CA1C2',
         },
         common: {
-          radiusXs: '6px', radiusSm: '10px', radiusMd: '14px', radiusLg: '18px', radiusXl: '24px',
-          radiusPanel: '30px', shadow1: '0 1px 2px 0 rgb(5 12 30 / 14%)',
-          shadow2: '0 6px 18px 0 rgb(5 12 30 / 22%), 0 0 0 0.5px rgb(120 170 255 / 10%)',
-          shadow3: '0 16px 40px 0 rgb(5 12 30 / 38%), 0 0 24px 0 rgb(90 150 255 / 12%)',
-          menuBackdrop: 'blur(32px) saturate(150%)',
+          radiusXs: '4px', radiusSm: '8px', radiusMd: '12px', radiusLg: '16px', radiusXl: '20px',
+          radiusPanel: '24px', shadow1: '0 1px 2px 0 rgb(5 12 30 / 14%)',
+          shadow2: '0 4px 12px -2px rgb(5 12 30 / 24%), 0 1px 3px 0 rgb(5 12 30 / 14%)',
+          shadow3: '0 12px 28px -6px rgb(5 12 30 / 40%), 0 2px 8px 0 rgb(5 12 30 / 18%)',
+          menuBackdrop: 'blur(24px) saturate(140%)',
         },
       },
       {
@@ -431,10 +435,10 @@ window.__ModuleLoader__.load({
           error: '#E28872', toastBg: '#2A3721', toastFg: '#EDF3E1', thumb: '#97A786',
         },
         common: {
-          radiusXs: '6px', radiusSm: '12px', radiusMd: '18px', radiusLg: '24px', radiusXl: '30px',
-          radiusPanel: '36px', shadow1: '0 1px 3px 0 rgb(28 42 22 / 10%)',
-          shadow2: '0 5px 16px 0 rgb(28 42 22 / 13%), 0 1px 3px 0 rgb(28 42 22 / 7%)',
-          shadow3: '0 14px 36px 0 rgb(28 42 22 / 18%)', menuBackdrop: 'blur(24px) saturate(130%)',
+          radiusXs: '4px', radiusSm: '8px', radiusMd: '12px', radiusLg: '16px', radiusXl: '20px',
+          radiusPanel: '24px', shadow1: '0 1px 3px 0 rgb(28 42 22 / 10%)',
+          shadow2: '0 4px 12px -2px rgb(28 42 22 / 14%), 0 1px 3px 0 rgb(28 42 22 / 7%)',
+          shadow3: '0 12px 28px -6px rgb(28 42 22 / 20%), 0 2px 8px 0 rgb(28 42 22 / 9%)', menuBackdrop: 'blur(16px) saturate(130%)',
         },
       },
       {
@@ -514,56 +518,52 @@ window.__ModuleLoader__.load({
     // ── backdrop gradients ────────────────────────────────────────────────
 
     /**
-     * Built-in backdrops used while no image is set. They are artwork, so they
-     * carry their own colors instead of theme tokens; each one has a light and
-     * a dark rendering chosen by `data-ds-dark-theme`.
+     * Built-in backdrops used while no image is set: three low-contrast fields,
+     * one temperature each (cool mist, warm sand, deep dusk). They are artwork,
+     * not chrome — a frosted pane needs something underneath it — so each stays
+     * inside a single hue and never carries a second light source. The light and
+     * dark renderings are chosen by `data-ds-dark-theme`.
      */
     const GRADIENTS = [
       {
         id: 'aurora',
         nameKey: 'gradient.aurora',
         light:
-          'radial-gradient(90% 80% at 12% 0%, #DCE8FF 0%, rgb(220 232 255 / 0%) 62%),' +
-          'radial-gradient(80% 70% at 88% 6%, #FCE3F1 0%, rgb(252 227 241 / 0%) 58%),' +
-          'radial-gradient(90% 90% at 50% 100%, #DFF6EC 0%, rgb(223 246 236 / 0%) 62%),' +
-          'linear-gradient(165deg, #F6F9FE 0%, #EDF2FA 100%)',
+          'radial-gradient(100% 80% at 20% 0%, #DFE7F1 0%, rgb(223 231 241 / 0%) 62%),' +
+          'radial-gradient(80% 70% at 88% 96%, #E9EDF4 0%, rgb(233 237 244 / 0%) 58%),' +
+          'linear-gradient(180deg, #F3F6F9 0%, #E6EBF1 100%)',
         dark:
-          'radial-gradient(90% 80% at 12% 0%, #1D3357 0%, rgb(29 51 87 / 0%) 64%),' +
-          'radial-gradient(80% 70% at 88% 6%, #3A2040 0%, rgb(58 32 64 / 0%) 60%),' +
-          'radial-gradient(90% 90% at 50% 100%, #123733 0%, rgb(18 55 51 / 0%) 62%),' +
-          'linear-gradient(165deg, #0A0E15 0%, #0D121B 100%)',
+          'radial-gradient(100% 80% at 20% 0%, #24334A 0%, rgb(36 51 74 / 0%) 62%),' +
+          'radial-gradient(80% 70% at 88% 96%, #1B2A3C 0%, rgb(27 42 60 / 0%) 58%),' +
+          'linear-gradient(180deg, #101823 0%, #0C121B 100%)',
       },
       {
         id: 'sand',
         nameKey: 'gradient.sand',
         light:
-          'radial-gradient(85% 75% at 8% 4%, #FCEFD9 0%, rgb(252 239 217 / 0%) 60%),' +
-          'radial-gradient(80% 70% at 92% 0%, #F6E2DA 0%, rgb(246 226 218 / 0%) 58%),' +
-          'radial-gradient(95% 90% at 60% 100%, #EFF3E2 0%, rgb(239 243 226 / 0%) 62%),' +
-          'linear-gradient(160deg, #FBF7F0 0%, #F4EDE2 100%)',
+          'radial-gradient(100% 80% at 20% 0%, #EEDFC9 0%, rgb(238 223 201 / 0%) 62%),' +
+          'radial-gradient(80% 70% at 88% 96%, #EBDFCE 0%, rgb(235 223 206 / 0%) 58%),' +
+          'linear-gradient(180deg, #F8F2E7 0%, #EDE3D4 100%)',
         dark:
-          'radial-gradient(85% 75% at 8% 4%, #4A3520 0%, rgb(74 53 32 / 0%) 62%),' +
-          'radial-gradient(80% 70% at 92% 0%, #4A2B26 0%, rgb(74 43 38 / 0%) 58%),' +
-          'radial-gradient(95% 90% at 60% 100%, #2A3322 0%, rgb(42 51 34 / 0%) 60%),' +
-          'linear-gradient(160deg, #15110C 0%, #191410 100%)',
+          'radial-gradient(100% 80% at 20% 0%, #3A2C1E 0%, rgb(58 44 30 / 0%) 62%),' +
+          'radial-gradient(80% 70% at 88% 96%, #2E2319 0%, rgb(46 35 25 / 0%) 58%),' +
+          'linear-gradient(180deg, #1A140E 0%, #15110C 100%)',
       },
       {
         id: 'dusk',
         nameKey: 'gradient.dusk',
         light:
-          'radial-gradient(90% 80% at 10% 0%, #E6E2FF 0%, rgb(230 226 255 / 0%) 62%),' +
-          'radial-gradient(85% 75% at 90% 8%, #FFE1E8 0%, rgb(255 225 232 / 0%) 58%),' +
-          'radial-gradient(95% 90% at 45% 100%, #DCEBFB 0%, rgb(220 235 251 / 0%) 62%),' +
-          'linear-gradient(160deg, #F8F6FE 0%, #EEF0FA 100%)',
+          'radial-gradient(100% 80% at 20% 0%, #CFDAE7 0%, rgb(207 218 231 / 0%) 62%),' +
+          'radial-gradient(80% 70% at 88% 96%, #D8E1EB 0%, rgb(216 225 235 / 0%) 58%),' +
+          'linear-gradient(180deg, #E9EEF4 0%, #D2DCE8 100%)',
         dark:
-          'radial-gradient(90% 80% at 10% 0%, #2F264F 0%, rgb(47 38 79 / 0%) 62%),' +
-          'radial-gradient(85% 75% at 90% 8%, #4A2333 0%, rgb(74 35 51 / 0%) 58%),' +
-          'radial-gradient(95% 90% at 45% 100%, #13293F 0%, rgb(19 41 63 / 0%) 60%),' +
-          'linear-gradient(160deg, #0B0D16 0%, #0E1018 100%)',
+          'radial-gradient(100% 80% at 20% 0%, #2A3B50 0%, rgb(42 59 80 / 0%) 62%),' +
+          'radial-gradient(80% 70% at 88% 96%, #22303F 0%, rgb(34 48 63 / 0%) 58%),' +
+          'linear-gradient(180deg, #101823 0%, #0C1219 100%)',
       },
     ]
 
-    /** Backdrop defaults: a soft aurora, medium blur, readable haze, solid panels. */
+    /** Backdrop defaults: a calm cool field, medium blur, readable haze, solid panels. */
     const DEFAULT_GLASS = { gradient: 'aurora', blur: 18, haze: 38, density: 100 }
 
     // ── token layer ───────────────────────────────────────────────────────
@@ -757,16 +757,16 @@ body[${STYLE_ATTR}="glass"][data-ds-dark-theme]::after{background:rgb(8 10 14 / 
 .sss-content{max-width:920px;margin:0 auto;padding:0 clamp(20px,3.4vw,40px) 72px}
 .sss-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;padding:30px 0 20px}
 [data-platform=darwin] .sss-head{padding-top:calc(30px + var(--dsh-frame-top-clearance,0px))}
-.sss-title{margin:0;font-size:20px;font-weight:500;line-height:28px}
+.sss-title{margin:0;font-size:22px;font-weight:600;line-height:30px;letter-spacing:-.01em}
 .sss-subtitle{max-width:64ch;margin:4px 0 0;color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:20px}
-.sss-card{padding:18px;margin-bottom:14px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-xl);background:var(--dsw-alias-bg-layer-1)}
+.sss-card{padding:16px;margin-bottom:16px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}
 .sss-card-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 14px;margin-bottom:14px}
 .sss-card-title{margin:0;font-size:14px;font-weight:600;line-height:20px}
 .sss-card-desc{max-width:62ch;margin:3px 0 0;color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px}
 .sss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:10px}
-.sss-style{position:relative;display:flex;flex-direction:column;gap:10px;padding:9px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s,transform .15s}
-.sss-style:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l4);transform:translateY(-1px)}
-.sss-style.is-active{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 1px var(--dsw-alias-state-business-primary)}
+.sss-style{position:relative;display:flex;flex-direction:column;gap:10px;padding:9px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
+.sss-style:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l4)}
+.sss-style.is-active{border-color:var(--dsw-alias-state-business-primary)}
 .sss-style:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .sss-thumb-wrap{position:relative;display:block;height:74px;overflow:hidden;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm)}
 .sss-thumb{position:absolute;inset:0;display:flex;padding:7px;background-size:cover;background-position:center}
@@ -781,26 +781,27 @@ body[data-ds-dark-theme] .sss-thumb-dark{display:flex}
 .sss-style-text{display:flex;flex-direction:column;gap:2px;min-width:0}
 .sss-style-name{padding-right:18px;color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500;line-height:18px}
 .sss-style-desc{display:-webkit-box;overflow:hidden;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-.sss-style-check{position:absolute;top:12px;right:12px;display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary-foreground)}
+.sss-style-check{position:absolute;top:10px;right:10px;display:flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-state-business-primary)}
 .sss-button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;line-height:18px;cursor:pointer;transition:background .15s,border-color .15s,color .15s,opacity .15s}
 .sss-button:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l4)}
 .sss-button:disabled{opacity:.45;cursor:default}
 .sss-button.is-danger:hover:not(:disabled){border-color:color-mix(in srgb,var(--dsw-alias-state-error-primary) 42%,var(--dsw-alias-border-l3));color:var(--dsw-alias-state-error-primary)}
 .sss-button:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .sss-link{padding:0;border:0;background:transparent;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:12px;font-weight:500;line-height:18px;cursor:pointer}
+/* deslop-ignore-next-line 09 — this is a text link; the underline is its affordance. */
 .sss-link:hover{text-decoration:underline}
 .sss-link:disabled{opacity:.45;cursor:default;text-decoration:none}
 .sss-link:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:4px}
-.sss-hintbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:0 0 14px;padding:8px 12px;border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-business-tertiary);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}
-.sss-bg-art{position:relative;isolation:isolate;display:flex;align-items:flex-end;width:100%;height:172px;padding:0;overflow:hidden;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-primary);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.sss-hintbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:0 0 14px;padding:8px 12px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}
+.sss-bg-art{position:relative;isolation:isolate;display:flex;align-items:flex-end;width:100%;height:172px;padding:0;overflow:hidden;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-primary);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s}
 .sss-bg-art:hover{border-color:var(--dsw-alias-border-l4)}
-.sss-bg-art.is-dragging{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-state-business-primary) 16%,transparent)}
+.sss-bg-art.is-dragging{border-color:var(--dsw-alias-state-business-primary)}
 .sss-bg-art:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .sss-bg-art:disabled{opacity:.62;cursor:default}
 .sss-bg-image{position:absolute;top:-6%;left:-6%;width:56%;height:56%;z-index:-2;background-image:var(${IMAGE_VAR},var(--dss-glass-gradient));background-position:center;background-size:cover;filter:blur(calc(var(${BLUR_VAR},18px) / 2)) saturate(1.04);transform:scale(2);transform-origin:top left}
 .sss-bg-haze{position:absolute;inset:0;z-index:-1;background:rgb(247 250 254 / var(${HAZE_VAR},40%))}
 body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},40%))}
-.sss-bg-hint{display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);margin:12px;padding:6px 12px;border-radius:var(--dsw-radius-sm);background:color-mix(in srgb,var(--dsw-alias-bg-overlay) 88%,transparent);color:var(--dsw-alias-label-secondary);box-shadow:var(--dsw-shadow-lv1);font-size:12px;line-height:18px;backdrop-filter:blur(12px)}
+.sss-bg-hint{display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);margin:12px;padding:6px 10px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-overlay);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}
 .sss-bg-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
 .sss-meta{min-width:0;overflow:hidden;color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;text-overflow:ellipsis;white-space:nowrap}
 .sss-actions{display:flex;flex-wrap:wrap;gap:8px}
@@ -811,15 +812,16 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
 .sss-range{display:block;width:100%;height:20px;margin:0;accent-color:var(--dsw-alias-state-business-primary);cursor:pointer}
 .sss-range:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:4px;border-radius:var(--dsw-radius-sm)}
 .sss-gradients{display:flex;flex-wrap:wrap;gap:8px}
-.sss-gradient{width:62px;height:38px;padding:0;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background-position:center;background-size:cover;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.sss-gradient{width:62px;height:38px;padding:0;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background-image:var(--sss-swatch-light);background-position:center;background-size:cover;cursor:pointer;transition:border-color .15s}
+body[data-ds-dark-theme] .sss-gradient{background-image:var(--sss-swatch-dark)}
 .sss-gradient:hover{border-color:var(--dsw-alias-border-l4)}
-.sss-gradient.is-active{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 2px var(--dsw-alias-state-business-primary)}
+.sss-gradient.is-active{border-color:var(--dsw-alias-state-business-primary)}
 .sss-gradient:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .sss-note{margin:14px 0 0;color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px}
 .sss-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:18px;margin:12px 0 0;color:var(--dsw-alias-state-business-primary);font-size:12px;line-height:18px}
 .sss-status.is-error{color:var(--dsw-alias-state-error-primary)}
 @media (width<=760px){.sss-content{padding-bottom:48px}.sss-grid{grid-template-columns:repeat(auto-fill,minmax(152px,1fr))}.sss-bg-art{height:142px}}
-@media (prefers-reduced-motion:reduce){.sss-style,.sss-button,.sss-bg-art,.sss-gradient{transition:none}.sss-style:hover{transform:none}}
+@media (prefers-reduced-motion:reduce){.sss-style,.sss-button,.sss-bg-art,.sss-gradient{transition:none}}
 `
 
     /** One rule pair per style (plus optional dark elevation) and gradient set, then the page chrome. */
@@ -1676,7 +1678,7 @@ body[data-ds-dark-theme] .sss-bg-haze{background:rgb(8 10 14 / var(${HAZE_VAR},4
                 key: gradient.id,
                 type: 'button',
                 className: 'sss-gradient' + (gradient.id === state.glass.gradient ? ' is-active' : ''),
-                style: { backgroundImage: gradient.light },
+                style: { '--sss-swatch-light': gradient.light, '--sss-swatch-dark': gradient.dark },
                 'aria-pressed': gradient.id === state.glass.gradient,
                 'aria-label': t(gradient.nameKey),
                 title: t(gradient.nameKey),
