@@ -1,8 +1,8 @@
 {
   "name": "@local/dsh-usage-stats",
-  "version": "1.1.0",
+  "version": "2.3.0",
   "private": true,
-  "description": "Token usage and estimated cost dashboard in the DSH Web sidebar, computed from this machine's real session logs.",
+  "description": "Token usage and estimated cost of this machine's real session logs, in one compact sidebar panel.",
   "type": "module",
   "main": "index.js",
   "license": "MIT",

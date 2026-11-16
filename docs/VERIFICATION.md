@@ -22,7 +22,7 @@
 | dsh-session-share | 0.1.0 | PASS | PASS | PASS | PASS | PASS | PASS（16 + 54 + 32 断言） | **PASS** |
 | dsh-sticky-wall | 1.1.0 | PASS | PASS | PASS | PASS | PASS | 无（无测试工具） | **PASS**（1.2.0 增量见文末） |
 | dsh-style-studio | 1.3.0 | PASS | PASS | PASS | PASS | PASS | 无（无测试工具） | **PASS** |
-| dsh-usage-stats | 1.0.0 | PASS | PASS | PASS | PASS | PASS | 无（无测试工具） | **PASS**（1.1.0 增量见文末） |
+| dsh-usage-stats | 1.0.0 | PASS | PASS | PASS | PASS | PASS | 无（无测试工具） | **PASS**（1.1.0 与 2.0.0 增量见文末） |
 
 整体断言数量（全部通过，0 失败）：
 
@@ -589,6 +589,111 @@ driver.log、orchestrator.log、4 张截图）与 `.verify-share-topbar/evidence
   工具栏始终可见。
 - 本机 `desktop` profile 安装的插件副本已同步为本次代码（`D:\Project\dsh-normal\plugins\dsh-session-share`，
   package.json 版本同为 `0.2.1`），刷新页面即可生效；未重启 DSH Desktop，未改真实 profile 配置。
+
+## 增量验证：dsh-usage-stats 2.3.0 模型用量（2026-11-16）
+
+**改了什么**：只有浏览器半变化，Host 与载荷契约不变。
+
+- 「模型成本」卡改为「模型用量」：按 Token 量从多到少排序，占比列改为 Token 占比。
+- 1% 折叠规则沿用，但口径随卡片改为 **Token 占比**：不到 1% 的模型折叠成一行「其他 N 个模型」，悬停可看名单。
+
+**结果**：41/41 断言通过，0 console error、0 slot error。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| 排序 | 行序与载荷按 Token 排序一致：`deepseek-v4.1-flash 43%`、`deepseek-flash 36%`、`step-5-preview 9%`、`deepseek-flash 8%`、`qwen3.8-max-0902 4%` | PASS |
+| 折叠 | 5 个 ≥1% 的模型单独成行，其余 9 个折叠为「其他 9 个模型」，其 Token `23.4M`、成本 `$40.52`、占比 `1%` 与独立汇总一致 | PASS |
+| 其他口径 | 默认 90 天、会话 100 条上限、日历格子数/周列数/月份标签、六项数字与载荷一致 | PASS |
+| 范围切换 | 全部时间 → 68 格 / 11 列 / 30px；30 天 → 30 格 / 6 列；会话仍为 100 行 | PASS |
+
+**残余风险与说明**：
+
+- 截图证据在 `.verify-usage-stats/evidence/20261116-230/`（`panel-90.png`、`panel-all.png`、`panel-30.png`、`e2e.log`，被 `.gitignore` 覆盖）。
+- 折叠按 Token 占比；某个成本高但 Token 少的模型会留在可见行里（它的成本列仍然照常显示），而 Token 少、成本也少的会进「其他」。
+
+## 增量验证：dsh-usage-stats 2.2.0 默认 90 天与列表口径（2026-11-16）
+
+**改了什么**：
+
+- 面板默认范围从「全部时间」改为 **90 天**（默认值在浏览器半，Host 不变）。
+- 模型成本改为按**成本占比**排序，占比列显示成本占比；成本不到 1% 的模型折叠成一行「其他 N 个模型」，悬停可看到被折叠的模型名。折叠在浏览器端完成，载荷不变。
+- 会话列表上限从 200 收到 100（Host 的 `MAX_SESSIONS`），其余会话仍计入合计。
+
+**结果**：43/43 断言通过，0 console error、0 slot error。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| 默认范围 | 打开即选中「90 天」，90 个格子 / 14 列 / 20px 方块 | PASS |
+| 汇总数字 | 六项与载荷一致：`3.2B` / `$151.46` / `17,399` / `290` / `45` / `deepseek-v4.1-flash` | PASS |
+| 模型折叠 | 保留 7 个成本 ≥1% 的模型，其余 7 个折叠为一行「其他 7 个模型」，其成本 `$2.76` 与 6 项检查逐行核对；被保留的每一行占比都 ≥1% | PASS |
+| 会话上限 | 三个范围都只渲染 100 行，并给出「仅列出最近的 100 个会话」 | PASS |
+| 范围切换 | 全部时间 → 68 格 / 11 列 / 30px；30 天 → 30 格 / 6 列；各自会话仍为 100 行 | PASS |
+
+**残余风险与说明**：
+
+- 截图证据在 `.verify-usage-stats/evidence/20261116-220/`（`panel-90.png`、`panel-all.png`、`panel-30.png`、`e2e.log`，被 `.gitignore` 覆盖）。
+- 折叠阈值按成本算；若某个模型成本极低但 Token 很多（例如缓存命中极高的便宜模型），它会进「其他」，悬停名单里能看到它。
+- 本机 `desktop` profile 已同步并热重载（见仓库外的安装副本 `D:\Project\dsh-normal\plugins\dsh-usage-stats`），刷新页面生效。
+
+## 增量验证：dsh-usage-stats 2.1.0 日历热力图（2026-11-16）
+
+**改了什么**：只有浏览器半变化，Host 半与载荷契约（`API.md`）完全没动。
+
+- 按天柱状图换成日历热力图：一格一天、一列一周（周一开始）、一行一个工作日位置；四档单色阶，按当天用量在区间内的排名分位取档（像贡献图）。
+- 概览做成一张卡：左边日历，右边六个数字（Token 用量、预估成本、消息数、会话数、活跃天数、最常用模型），数字纵向居中；窄屏（≤900px）改为上下排列。卡片不再自带标题，范围由右上角控件与第一个数字的标签说明。
+- 格子大小随列数取 30 / 20 / 14px（列少放大、列多收小，一年 53 列也放得进卡片，再长在卡内横向滚动）；悬停明细用浏览器原生 `title`。
+- 范围控件收到 30 天 / 90 天 / 全部，默认全部（7 天在日历上只有一列，无法成图）。
+
+**结果**：33/33 断言通过，0 console error、0 slot error。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| 汇总数字 | 六项与路由载荷逐项一致：`3.2B` / `$151.29` / `17,345` 条消息 / `290` 个会话 / `45` 个活跃天 / `deepseek-v4.1-flash` | PASS |
+| 日历布局 | 格子数 = 载荷天数（68）；周列数 = 按周一对齐独立算出的 11 列；月份标签 9 / 10 / 11 月 | PASS |
+| 日历外观 | 30px 方块、7 行 + 月份行共 254px 高、四档 + 空格、活跃日覆盖全部四档、空闲日（23 天）全空、每格都有 `title` | PASS |
+| 范围切换 | 30 天 → 30 格 / 6 列 / 30px / 25 活跃天；90 天 → 90 格 / 14 列 / 20px | PASS |
+| 其他卡片 | 模型 14 行、会话 200 行（上限）、页脚隐私说明、无 slot error | PASS |
+
+**残余风险与说明**：
+
+- 截图证据在 `.verify-usage-stats/evidence/20261116-heatmap/`（`panel-all.png`、`panel-30.png`、`panel-90.png`、`e2e.log`，临时目录，被 `.gitignore` 覆盖）。
+- 截图是深色主题；面板只用 `--dsw-*` token 与其 `color-mix()`，浅色主题未单独截图。
+- 本机 `desktop` profile 未重启 DSH：Host 半仍是 1.1.0 的旧载荷，页面刷新后会提示「Host 端还是旧版本」，重启后即恢复。
+
+## 增量验证：dsh-usage-stats 2.0.0 精简面板（2026-11-16）
+
+验证对象只有 `dsh-usage-stats`，其余插件与上面的记录相同。
+
+**改了什么**：面板整体重写，代码从 `index.js` 1458 行 + `client.js` 3193 行收到约 700 + 620 行。
+
+- 路由从 3 个收成一个 `GET /dsh-usage-stats?days=<n>`：去掉 `/live` 轻量轮询与 `POST /refresh`，面板每 5 秒取整份载荷，Host 自己按 15 秒节流重新枚举会话日志。
+- 载荷去掉 `totals`/`range` 两层嵌套、`sessions[].modelUsage`、`delta`、`prices` 回显，以及 turns / userMessages / toolCalls 三个计数；每个数字都按所选范围给出。
+- 界面去掉供应商卡片、成本环、环比药丸、搜索 / 排序 / 分页 / 会话展开、扫描胶囊、骨架屏、每周聚合与图表浮层；时间线改成一排 CSS 柱子，悬停明细用浏览器原生 `title`。
+- 缓存文件改为 `$DSH_HOME/cache/dsh-usage-stats/summaries.json`（`v1`，价格指纹比对），摘要改成纯 JSON，不再需要自读写层；`config` 只保留 `prices` 与 `fallback`。
+
+**验证环境**：隔离 `DSH_HOME` + 临时 profile + `link:` 安装（`dsh plugin --profile verify-usage add`），把真实 `~/.dsh/sessions`
+（331 个文件、151 MB）只读拷贝到临时 home，`dsh --profile verify-usage --port 0 --no-open` 起服务，再用无头 Edge
+（CDP）打开页面点击侧栏「用量统计」。
+
+**结果**：28/28 断言通过，0 console error、0 slot error。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| Host 路由 | 只注册一个精确路由；`?days=7` 与 `?days=0` 的 `totals` / `timeline` / `models` / `sessions` 齐全 | PASS |
+| 回环限制 | 外部 `Origin` 头 → `403`；非 `GET` → `405`（Host 自检） | PASS |
+| 面板渲染 | 侧栏入口、标题、四个数字、7 天 7 根柱子（图高 150px）、4 段图例、模型行、会话行、页脚 | PASS |
+| 数字一致 | 面板首位数字与路由载荷相同：7 天 `651.6M`；全部 `3.1B`（`$151.12`、`17,249` 次请求、`290` 个会话） | PASS |
+| 范围切换 | 切到「全部」后柱子数 = 载荷天数（68），模型行 = 14，会话行 = 200（上限） | PASS |
+| 冷扫描 | 331 个日志约 60 秒索引完成；过程中面板显示「索引中 n/N」并逐步出数 | PASS |
+
+Host 另有一套假服务自检（`tmp/` 下，未提交）：fork 继承前缀不重复计数、未知模型按兜底价并标记、7 天与全部时间两种折叠、磁盘缓存往返与价格指纹失效、
+回环三条件（peer / `Host` / `Origin`）与 405、`?days=banana` 回落到 7 天，全部通过。
+
+**残余风险与说明**：
+
+- 截图证据在 `.verify-usage-stats/evidence/20261116-slim-final/`（`panel-week.png`、`panel-all-time.png`、`e2e.log`，临时目录，被 `.gitignore` 覆盖）。
+- 本机 `desktop` profile 里安装的是同一份源码，但**没有重启 DSH**：Host 半仍是旧进程里的代码，页面刷新后新面板会提示「Host 端还是旧版本」，重启后即恢复。
+- 浅色主题未单独截图；面板只使用 `--dsw-*` 主题 token（外加同 token 的 `color-mix()`），没有写死颜色。
 
 ## 结论
 
