@@ -89,7 +89,7 @@ window.__ModuleLoader__.load({
 
 - 只能 `require` 平台模块表里已有的模块（React、DSH 客户端模块等），不能 `import` npm 包或 Node 内置模块。
 - 通过 `ctx.slots.inject(...)` / `ctx.slots.register(...)` 注册入口与面板，并跟随插槽的声明/销毁生命周期。
-- 颜色、字体、圆角等一律用 `--dsw-*` / `--ds-*` 主题 token，保证浅色/深色与 Style Studio 等主题插件兼容。
+- 颜色、字体、圆角等一律用 `--dsw-*` / `--ds-*` 主题 token，保证浅色/深色外观与用户的主题设置兼容。
 - 出错时让组件隐藏自身或渲染错误态，不要让整个插槽崩掉。
 
 ### 5. locale 与 icon

@@ -11,7 +11,6 @@
 | [dsh-completion-notify](dsh-completion-notify/README.md) | `@local/dsh-completion-notify` · 1.0.0 | 会话跑完任务、出错、中断，或卡在等你授权/回答时，由 DSH 主进程弹出**操作系统通知**，标题写明是哪个会话 | 设置 → 通用 → 通知开关（+ 测试按钮） |
 | [dsh-session-share](dsh-session-share/README.md) | `@local/dsh-session-share` · 0.2.0 | 挑选当前会话里要分享的消息，导出为 **Markdown / PNG 长图 / PDF**，图片、表格与 **LaTeX 公式**都会排版，全部在本机完成 | 会话标题下方的「分享」页签 |
 | [dsh-sticky-wall](dsh-sticky-wall/README.md) | `@local/dsh-sticky-wall` · 1.2.0 | 左侧栏的**便签墙**：随手记灵感、置顶、搜索、六种便签纸颜色，支持撤销删除；长短不一的便签按最短列**交错紧密排列**（瀑布流） | 左侧栏「便签墙」 |
-| [dsh-style-studio](dsh-style-studio/README.md) | `@local/dsh-style-studio` · 2.2.0 | 左侧栏的**视觉风格页面**：一键切换**六套应用级视觉风格**（毛玻璃、水墨书画、深空极夜、苔原森野、像素街机、石墨黑白），毛玻璃支持**自定义图片背景**与模糊 / 雾面 / 面板浓度调节，底图与模糊层做了降采样优化，自动适配浅色/深色 | 左侧栏「视觉风格」 |
 | [dsh-usage-stats](dsh-usage-stats/README.md) | `@local/dsh-usage-stats` · 1.1.0 | 用本机真实会话日志统计 **Token 用量与估算成本**：时间线、模型成本构成、逐会话明细，以及按供应商拆解的模型/会话消耗 | 左侧栏「用量统计」 |
 
 ## 安装
@@ -91,7 +90,7 @@ DSH `0.2.2` 的这条命令会在安装依赖后**自动把组合包加入 profi
 - `dsh-usage-stats` 只读取本机 `$DSH_HOME/sessions` 下的会话日志，只在 `$DSH_HOME/cache/dsh-usage-stats/` 写一份统计缓存。
 - `dsh-session-share` 的导出完全在浏览器本机完成；Host 只提供一个仅回环可访问的只读会话接口。
 - `dsh-completion-notify` 只调用本机系统通知命令（Windows PowerShell / macOS `osascript` / Linux `notify-send`）。
-- `dsh-sticky-wall`、`dsh-style-studio` 是纯前端插件，数据存在浏览器 `localStorage`（`dsh-style-studio` 的自定义背景图存在 IndexedDB，图片不出本机）。
+- `dsh-sticky-wall` 是纯前端插件，数据存在浏览器 `localStorage`。
 - 插件页/索引安装时，pnpm 会访问 npm 源；索引安装还会访问 GitHub。这是 DSH 安装插件的正常网络行为。
 
 ## 仓库结构
@@ -101,14 +100,13 @@ dsh-plugins/
 ├─ dsh-completion-notify/   # 每个插件：独立的 package.json + cordis.patch.yml + 源码 + README
 ├─ dsh-session-share/
 ├─ dsh-sticky-wall/
-├─ dsh-style-studio/
 ├─ dsh-usage-stats/
 ├─ index.json               # DSH 插件市场索引（format 1），供「发现」标签使用
 ├─ docs/
 │  ├─ INSTALL.md            # 安装 / 升级 / 卸载 / 排错
 │  ├─ COMPATIBILITY.md      # 兼容性矩阵与版本说明
 │  ├─ DEVELOPMENT.md        # 插件结构、开发、构建与发布流程
-│  ├─ DESIGN.md             # 五个插件共用的视觉规则与 kill-ai-slop 复查记录
+│  ├─ DESIGN.md             # 四个插件共用的视觉规则与 kill-ai-slop 复查记录
 │  └─ VERIFICATION.md       # 在 DSH 0.2.2-rc.1 上的实测记录
 ├─ scripts/
 │  ├─ generate-index.mjs    # 重新生成 index.json
@@ -129,14 +127,13 @@ node scripts/generate-index.mjs   # 需要提交后重新生成索引
 
 ## English
 
-Five personal [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web plugins, each an independent package (`@local/dsh-*`), tested on **DSH Desktop 0.2.2-rc.1**.
+Four personal [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web plugins, each an independent package (`@local/dsh-*`), tested on **DSH Desktop 0.2.2-rc.1**.
 
 | Plugin | What it does |
 | --- | --- |
 | `dsh-completion-notify` | OS notifications (task finished / errored / waiting for approval or answer) sent by the DSH host, titled with the session. |
 | `dsh-session-share` | Pick messages from the current conversation and export Markdown, a PNG image, or a PDF — tables, images and LaTeX formulas are laid out on-device. |
 | `dsh-sticky-wall` | A sticky-note wall in the left sidebar: capture, pin, search, undo delete; notes of any height tile tightly in staggered columns. |
-| `dsh-style-studio` | Six app-wide visual styles on a left-sidebar page, including a frosted-glass theme with a custom image backdrop (blur and haze sliders). |
 | `dsh-usage-stats` | Token usage and estimated cost dashboard computed from this machine's session logs, including per-provider model consumption and per-session breakdowns. |
 
 **Install (offline):** clone this repo, open **Plugins → Add plugin** in DSH Desktop, and paste the absolute path of one plugin folder (for example `D:\github\dsh-plugins\dsh-sticky-wall`). Install and enable it, then repeat for the others.

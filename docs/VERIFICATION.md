@@ -1,13 +1,17 @@
 # 在 DSH Desktop 0.2.2-rc.1 上的安装与加载验证
 
-本文件记录本仓库 5 个插件在 **当前真实 DSH 运行时**（DSH Desktop `0.2.2-rc.1`，Windows 11）
-上的实测结果：每个插件都走完了「静态校验 → 安装 → 组合 → Host 启动 → client bundle 提供」
+> **2026-11-16 更新**：`dsh-style-studio` 已从本仓库移除（插件源码、索引条目与本机安装副本均已删除）。
+> 下文 2026-11-07 的首次全链路验证与各插件增量记录中，凡涉及 `dsh-style-studio` 的内容仅作历史存档，
+> 不再对应当前仓库；该插件的三份增量验证记录（2.0.0 / 2.1.0 / 2.2.0）已随插件一并删除。
+> 当前仓库为 4 个插件，其余结论继续有效。
+
+本文件记录本仓库插件的实测结果（2026-11-07 首次验证时仓库为 5 个插件）：每个插件都走完了「静态校验 → 安装 → 组合 → Host 启动 → client bundle 提供」
 全链路，并按发布路径（插件市场索引、GitHub 子目录 git 安装）补充了验证。
 
 - 验证日期：2026-11-07
 - 验证对象：本仓库 `main` 上插件目录（对应提交 `417bb5c`）；`index.json` 固定在 `417bb5c`，索引提交为 `6fc08e3`（其后新增的提交仅包含本文档与 `scripts/verify-install.ps1`，不涉及插件内容）
 - 验证方式：**隔离 DSH_HOME + 临时 profile + 本机 DSH Desktop 自带 CLI**，未登录、未联网安装、未触碰真实 `~/.dsh`
-- 结果：**5/5 插件 PASS**；`index.json` 通过 DSH 真实校验器；GitHub 子目录 git 安装实测通过
+- 结果：**当时 5 个插件全部 PASS**（其中 `dsh-style-studio` 已移除，其余 4 个仍是当前插件）；`index.json` 通过 DSH 真实校验器；GitHub 子目录 git 安装实测通过
 - 一键复跑：`pwsh -File scripts/verify-install.ps1`（见 [复现](#复现步骤)）
 
 ## 结果汇总
@@ -386,7 +390,6 @@ $ & dsh.cmd plugin --profile verifyhttps add '"git+https://github.com/stuPETER12
 | DSH Desktop `desktop` profile 与桌面 UI 内安装 | 未验证：约束要求不触碰真实环境，实测走 CLI 的隔离 web profile；桌面端与 web 共用同一 loader/pnpm 过程，风险低 | 需用户在真机做一次 UI 点击安装确认 |
 | completion-notify 的系统通知实际弹出 | 未端到端验证：需要真实会话完成/等待授权事件（隔离 profile 无模型凭据、无会话） | OS 通知文案/点击聚焦行为未实测；模块加载、设置页注册代码路径已验证 |
 | session-share 会话内「分享」页签交互 | 未验证：页签在活跃会话中出现，隔离 profile 未产生会话；Host 路由与 client 模块已验证 | 导出 Markdown/PNG/PDF 的真实点击流程未实测（单元测试覆盖导出核心 54 项） |
-| style-studio「视觉风格」设置行点击换肤 | 未验证：设置页需要登录/模型配置，隔离 profile 未登录；模块 `apply()` 已通过 style 注入证明执行 | 五种风格的实际视觉切换未实测 |
 | usage-stats 1.0.0 真实统计数字与图表 | 1.0.0 未验证：隔离 DSH_HOME 无会话日志，接口返回 0 值空态；1.1.0 的供应商用量卡片已用真实会话数据副本完成无头端到端验证（见文末增量记录） | 1.0.0 旧面板整体未在真实数据上回归；1.1.0 的供应商卡片、成本卡片与会话表渲染已实测，图表细节仍以视觉抽查为准 |
 | 市场「发现」标签页端到端安装 | 未验证：需要启用可选插件「自定义插件索引」，且 raw URL 网络抖动；已用真实 validator + 真实 git 安装等价验证 | UI 点击流程未实测；spec 本身已实测可安装 |
 | 非 Windows 平台 | 未验证（仅 Windows 11 实测） | 插件含 macOS/Linux 分支（如系统通知命令），未实测 |
@@ -587,150 +590,9 @@ driver.log、orchestrator.log、4 张截图）与 `.verify-share-topbar/evidence
 - 本机 `desktop` profile 安装的插件副本已同步为本次代码（`D:\Project\dsh-normal\plugins\dsh-session-share`，
   package.json 版本同为 `0.2.1`），刷新页面即可生效；未重启 DSH Desktop，未改真实 profile 配置。
 
-## 增量验证：dsh-style-studio 2.0.0 侧栏入口与毛玻璃背景（2026-11-15）
-
-本记录针对**工作区中的未提交变更**（插件版本 `2.0.0`），不是已发布索引的一部分；
-验证对象只有 `dsh-style-studio`，其余插件与上文记录相同。
-
-**改动**：
-
-1. 入口从「设置 → 通用设置」的一行（`settings.general.item`）搬到**左侧边栏面板**：
-   浏览器半改为向 `sidebar.panellist` 注册图标行（`id: style-studio`、`order: 40`），
-   向布局的 `main` 槽注册同键页面；`package.json` 的 `dsh.client.inject` 从设置相关包
-   换成主题 / 侧栏 / 布局 / 语言四个模块。
-2. 新增**毛玻璃**（`glass`）主题：36 个颜色改为带 alpha 的 `rgb()`，圆角更大、阴影更柔；
-   `body[data-dsh-style="glass"]::before` 铺自定义图片（`cover` + `filter: blur()`），
-   `::after` 是随浅 / 深切换颜色的雾面层。
-3. 背景图片存 IndexedDB（`dsh-style-studio` / `wallpaper` / `current`），渐变与滑杆参数存 localStorage；
-   页面提供拖放 / 选图、三套内置渐变、模糊（0–40px）与雾面（0–80%）滑杆、预览、移除（8 秒可撤销）与恢复默认。
-
-**方法**（本会话没有浏览器控制，按 `dsh-doc` 的 `references/verification.md` 限制执行）：
-
-1. **静态检查**：`node --check client.js`、`node --check index.js`、`JSON.parse` 三个 JSON 文件均通过。
-   `node scripts/verify-repo.mjs` 的 294 项检查中 275 项通过；另外 19 项是它用 `execFileSync` 起
-   `node --check` 子进程时的 `spawnSync ... EPERM`（当前沙箱禁止子进程管道），不是语法错误，
-   两个插件的 JS 已用直接调用的 `node --check` 逐个确认。
-2. **模块冒烟测试**（一次性桩，未提交）：用桩 `window` / `document` / `React` / Cordis `ctx` 载入
-   `client.js`，执行 `apply()` 并把页面按函数组件逐层调用。断言：
-   - 样式表含六套 `body[data-dsh-style="…"]` 规则、三套 `body[data-dss-bg="…"]` 渐变规则、
-     `glass::before` 与 `glass::after` 背景层；
-   - 只注册 `sidebar.panellist`（`id: style-studio`）与 `main`（`key: style-studio`）两个席位，
-     **不再注册任何 `settings.*`**；
-   - 六张风格卡片顺序为 glass → ink → midnight → forest → pixel → mono，选中 / 复位时 body 属性与
-     token 覆盖层的注册、释放次数正确；
-   - 所有 `t('…')` 文案键（含动态返回的 `notImage` / `tooLarge` / `readFailed` / `applied*`）在中英两套
-     字典里都存在，且两套字典键集一致；
-   - 选图后 body 上出现 `--dss-glass-image: url("blob:…")` 并自动切到 glass，移除后变量被清除；
-   - 卸载清理会撤销对象 URL、清掉 `data-dsh-style` / `data-dss-bg` / 三个背景变量。
-3. **背景层叠依据**（读宿主包内源码，不是推测）：`@deepseek-ai/dsh-client-ui-layout` 的
-   `AppFrame.module.css` 用 `background: var(--dsw-alias-bg-base)` 画外框底色（第 8 / 35 / 150 / 160 行），
-   `@deepseek-ai/dsh-web-frontend` 的宿主样式表里 `body{background:var(--dsw-alias-bg-base, #fff)}`。
-   毛玻璃调色板把该 token 设为半透明，因此 `z-index:-1` 的 `body::before` 底图会透过外框与半透明面板显示；
-   宿主 body 背景会传播到画布、位于底图之下，不会盖住它。
-4. **本机 desktop profile 的链接副本已同步为本次代码**（profile 里 `@local/dsh-style-studio` 的 junction
-   指向的插件目录），刷新页面即可加载新模块；未重启 DSH Desktop，未改真实 profile 配置。
-
-**结果**：静态 2 个 JS 文件通过；冒烟测试 6 套风格 / 2 个插槽注册 / 全部断言通过（0 失败）。
-`verify-repo` 除沙箱子进程限制外无失败项。
-
-**未验证（本会话无浏览器控制）**：真实渲染下毛玻璃底图是否如预期透出、半透明面板上的文字对比度、
-40px 模糊的帧率、拖放与滑杆的实际观感、浅 / 深色两套效果。这些需要用户在运行中的应用里目视确认；
-如需补充，应按本文件此前记录的方式，在**隔离 profile + 无头 Edge** 中量取 DOM 几何与控制台错误。
-
-**残余风险与说明**：
-
-- 背景层依赖宿主用 token 画不透明底色：若未来某个宿主版本改用硬编码颜色铺满外框，底图会被盖住；
-  届时可用 `body::before` 之上再加一层或改由布局插槽承载背景。
-- 背景图只在毛玻璃主题下显示；其它风格保留参数但不绘制底图。
-- 图片按 `cover` 原样铺满，不压缩、不裁切；24 MB 上限、动图会持续播放两点已写入插件 README。
-
-## 增量验证：dsh-style-studio 2.1.0 毛玻璃可读性（2026-11-15）
-
-本记录针对**工作区中的未提交变更**（插件版本 `2.1.0`），不是已发布索引的一部分；
-验证对象只有 `dsh-style-studio`。
-
-**问题**：2.0.0 的毛玻璃面板整体只有 30–68% 不透明度，组件（输入框、卡片、侧栏、气泡、菜单）
-下方的滚动文字会透上来，面板文字与背后的文字互相干扰。
-
-**改动**：
-
-1. 面板类颜色（`surface` / `surface2` / `surface3` / `overlay` / `platform` / `sidebar*` / `code` /
-   `inline` / `bubble*` / `input` / `menu`）的基线提高到 85–98% 不透明度，页面底色 `paper` 保留
-   48%（深色 62%），底图仍能从空白区域透出；深色面板同样抬高。
-2. 新增「面板浓度」滑杆（60–100%，默认 100%）：玻璃 alpha 统一写成
-   `calc(<base> * var(--dss-glass-alpha, 1))`，拖动时只写这一个 body 变量即可整体缩放；页面上
-   卡片、输入框、气泡、侧栏与页面底色一起变实 / 变透。
-3. 雾面默认 34% → 38%，恢复默认背景时把面板浓度也一并复位。
-
-**方法**（本会话没有浏览器控制，与 2.0.0 同一套限制）：
-
-1. `node --check client.js` 通过。
-2. 一次性桩冒烟测试（未提交）新增断言：样式表花括号与圆括号均配平；纸张与面板的 fill 组合为
-   `rgb(247 249 253 / calc(0.48 * var(--dss-glass-alpha, 1)))` 与
-   `rgb(255 255 255 / calc(0.94 * var(--dss-glass-alpha, 1)))`；body 上默认
-   `--dss-glass-blur: 18px`、`--dss-glass-haze: 38%`、`--dss-glass-alpha: 1`；
-   `sss-blur` / `sss-haze` / `sss-density` 三条滑杆存在且密度区间为 60–100%，拖到 60% 后
-   `--dss-glass-alpha` 变为 `0.6`；选图 / 移除 / 卸载清理与中英文案键仍全部通过。
-
-**结果**：冒烟测试全部通过（0 失败）。
-
-**未验证（本会话无浏览器控制）**：默认 100% 时面板是否已足够挡住滚动文字、底图是否仍可感知、
-深浅色下的实际对比。需在运行中的应用里目视确认，必要时用「面板浓度」微调。
-
-**残余风险与说明**：
-
-- DSH 的面板没有公开的 `backdrop-filter` token 或稳定类名，插件无法给每个面板做真正的背景模糊，
-  只能用高不透明度换取可读性；真正的磨砂玻璃需要宿主开放对应扩展点。
-- 「面板浓度」是全局倍数：调到 70% 以下会重新出现文字透出，调到 100% 时约为 94–98% 实心。
-
-## 增量验证：dsh-style-studio 2.2.0 性能优化（2026-11-15）
-
-本记录针对**工作区中的未提交变更**（插件版本 `2.2.0`），不是已发布索引的一部分；
-验证对象只有 `dsh-style-studio`。
-
-**问题**：毛玻璃靠两层全屏效果（底图 `filter: blur()` + 雾面）呈现，底图还是上传时的原图；滑杆每收到一个
-`input` 事件就写一次 body 变量并触发一次全页面 React 重渲染。大图 + 拖动滑杆时容易掉帧。
-
-**改动**：
-
-1. **底图降采样**：选图后 `createImageBitmap` 解码，长边 > 2048px 或文件 > 1.2 MB 时缩放到 2048px 并编码为
-   WebP（质量 0.85）再写 IndexedDB；小图保留原字节。动图因此只保留首帧。2.1 及更早存下的大图会在下次加载时
-   自动压缩并回写，用户不必重新选图。
-2. **模糊层半分辨率**：`body[..="glass"]::before` 改为 54% 视口、`top/left:-2%`、`blur: calc(blur / 2)`、
-   `transform: scale(2)`；屏幕上的模糊量不变，参与高斯模糊的像素约为原来的 1/4，纹理也小到 1/4。
-   页面内的背景预览（`.sss-bg-image`）同样处理。
-3. **滑杆合帧**：`updateGlass()` 只记值并预约一个 `requestAnimationFrame`，同帧多次输入合并为一次变量写入 +
-   一次 React 更新；`applyGlassVars()` 增加签名比对，值未变就不碰 body（避免全文档样式重算）。
-   卸载时取消未执行的帧；持久化仍为 300ms 去抖。
-4. **卡片 memo 化**：六张风格卡改成 `memo(...)`，点击回调 `pickStyle` 提到模块级，拖动滑杆时只重绘背景卡片。
-5. 默认雾面 34% → 38%，恢复默认背景时面板浓度一并复位。
-
-**方法**（本会话没有浏览器控制，与 2.0/2.1 同一套限制）：
-
-1. `node --check client.js` 通过。
-2. 一次性桩冒烟测试（未提交）新增断言：
-   - 样式表含 `width:54%`、`transform:scale(2)` 与 `blur(calc(var(--dss-glass-blur,18px) / 2))`；
-   - 拖动面板浓度滑杆后，body 变量在动画帧之前**不变**，执行帧回调后才变为 `0.6`，回到 100% 后恢复 `1`；
-   - 上传一张 3000×2000 的图片后，记录尺寸被压到 `2048 × 1365` 且经 canvas 重编码（canvas 桩收到
-     2048×1365 的绘制调用与 `image/webp` 输出），背景变量随即指向新的 blob URL；
-   - 六张卡片共享同一个 `onPick` 引用（memo 生效的前提）；移除图片、卸载清理与中英文案键仍全部通过。
-
-**结果**：冒烟测试全部通过（0 失败）。
-
-**未验证（本会话无浏览器控制）**：真实帧率、GPU 计时与显存占用；半分辨率模糊的观感（理论上与全分辨率
-18px 模糊等价）、降采样后的底图细节、动图转静态后的观感。需在运行中的应用里目视与手感确认。
-
-**残余风险与说明**：
-
-- 半分辨率模糊在大尺寸 4K 显示器上可能显出轻微的插值软化；如果肉眼可辨，把 `::before` 的 54%/`scale(2)`
-  改回 100%/`scale(1)`、模糊恢复 `var(--dss-glass-blur)` 即可退回旧实现，只是更耗 GPU。
-- 降采样意味着 IndexedDB 里不再是原始文件：需要原图请重新选图；插件不保留原图副本。
-- 上述收益为像素数与调用次数的估算（如 4K 照片像素约 1200 万 → 约 280 万、全屏模糊像素约 207 万 → 约 52 万），
-  未做帧率实测。
-
 ## 结论
 
-在 DSH Desktop `0.2.2-rc.1` 上，5 个插件均可通过真实 CLI 安装、进入 profile 组合包、由 Host 启动加载，
+在 DSH Desktop `0.2.2-rc.1` 上，上述插件（首次验证时为 5 个，其中 `dsh-style-studio` 已于 2026-11-16 移除）均可通过真实 CLI 安装、进入 profile 组合包、由 Host 启动加载，
 并由 `/plugins` 路由提供各自的浏览器模块；仓库静态校验、session-share 单元测试、插件市场索引
 （真实校验器 + 已发布 raw 索引）与 GitHub 子目录 git 安装均通过。未验证项集中在**需要真实登录会话或
 桌面 UI 交互**的功能细节，不影响「可安装、可加载」的结论。

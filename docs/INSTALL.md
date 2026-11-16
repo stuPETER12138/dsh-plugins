@@ -1,6 +1,6 @@
 # 安装、升级与卸载
 
-本仓库的 5 个插件都是独立的 DSH「组合包（bundle）」，每个插件单独安装、单独启用、单独卸载。本文以当前验证过的环境为准：
+本仓库的 4 个插件都是独立的 DSH「组合包（bundle）」，每个插件单独安装、单独启用、单独卸载。本文以当前验证过的环境为准：
 
 | 项目 | 值 |
 | --- | --- |
@@ -75,7 +75,6 @@ DSH 的**插件索引**是一份 JSON 清单，列出可安装的组合包及其
    D:\github\dsh-plugins\dsh-completion-notify
    D:\github\dsh-plugins\dsh-session-share
    D:\github\dsh-plugins\dsh-sticky-wall
-   D:\github\dsh-plugins\dsh-style-studio
    D:\github\dsh-plugins\dsh-usage-stats
    ```
 
@@ -128,7 +127,6 @@ dsh plugin --profile myprofile add "link:D:\github\dsh-plugins\dsh-sticky-wall"
    - `dsh-completion-notify`：设置 → 通用 → 通知行。
    - `dsh-session-share`：任意会话标题下方的「分享」页签。
    - `dsh-sticky-wall`：左侧栏「便签墙」。
-   - `dsh-style-studio`：设置 → 通用 → 「视觉风格」行。
    - `dsh-usage-stats`：左侧栏「用量统计」。
 3. 功能本身正常使用（每个插件的 README 有「验证生效」小节）。
 
@@ -167,7 +165,6 @@ dsh plugin --profile <profile> remove @local/dsh-xxx
 | `dsh-completion-notify` | 浏览器 `localStorage` 键 `dsh.completion-notify.v1`（通知开关 `enabled`；「发送测试通知」不落盘） |
 | `dsh-session-share` | 浏览器 `localStorage` 键 `dsh.session-share.prefs.v1`（导出偏好） |
 | `dsh-sticky-wall` | 浏览器 `localStorage` 键 `dsh.sticky-wall.notes.v1`（全部便签）与 `dsh.sticky-wall.prefs.v1`（上次选择的纸色） |
-| `dsh-style-studio` | 浏览器 `localStorage` 键 `dsh.style-studio.v1`（所选风格） |
 | `dsh-usage-stats` | 缓存文件 `$DSH_HOME/cache/dsh-usage-stats/summaries.v5.json`；插件配置在 profile 的 `cordis.patch.yml` 里 `usage-stats` 行 |
 
 浏览器数据可在 DSH 页面用开发者工具清除对应 key；缓存目录直接删除即可（下次打开面板会重建）。
@@ -212,5 +209,5 @@ Windows 的系统通知/专注助手会拦截横幅，检查系统设置；`dsh-
 **Q9：`dsh-usage-stats` 第一次打开很慢。**
 第一次会冷扫描本机全部会话日志（几百 MB 级别），之后有缓存秒开；详见插件 README 的「性能」一节。
 
-**Q10：可以一次性装全部 5 个吗？**
+**Q10：可以一次性装全部 4 个吗？**
 可以：方式 A 在发现页逐个点安装；方式 B 在插件页逐个粘贴路径。桌面端没有官方的「批量安装」入口，这是插件管理器的设计（一次只跑一个安装任务）。
