@@ -63,11 +63,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1794753277,
+          "publishTimestamp": 1794842055,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
+            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
             "path": "dsh-completion-notify"
           }
         }
@@ -109,11 +109,11 @@
       "versions": [
         {
           "version": "0.2.1",
-          "publishTimestamp": 1794753277,
+          "publishTimestamp": 1794842055,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
+            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
             "path": "dsh-session-share"
           }
         }
@@ -151,11 +151,11 @@
       "versions": [
         {
           "version": "1.2.0",
-          "publishTimestamp": 1794753277,
+          "publishTimestamp": 1794842055,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
+            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
             "path": "dsh-sticky-wall"
           }
         }
@@ -192,12 +192,12 @@
       },
       "versions": [
         {
-          "version": "1.1.0",
-          "publishTimestamp": 1794753277,
+          "version": "2.3.0",
+          "publishTimestamp": 1794842055,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "71c63e951231211d180dcaafdf4003d991d719c6",
+            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
             "path": "dsh-usage-stats"
           }
         }
