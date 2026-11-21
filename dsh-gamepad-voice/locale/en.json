@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Controller & voice",
+    "description": "Drive DSH from an Xbox One controller and replace typing with local speech. The left-sidebar page labels every action with its Xbox One button: the D-pad switches sessions and panels, A sends the draft, B stops the reply, X starts a new session, holding LB for about half a second switches where a transcript goes, RB cycles the recognition language, View returns to the conversation, and Menu opens this page; while a controller is connected the same hints appear in a bar at the lower-left. Holding Y records speech that is transcribed into the current draft. Audio is transcribed on this machine by the Voice input plugin's SenseVoice service and is never uploaded; the plugin stores only its settings in this browser. Speech requires the Voice input plugin (it provides the transcription service); the page offers working links to open Plugins or prepare its model, and a window blur, controller disconnect, or Escape ends recording.",
+    "detail": "docs/DETAIL.md"
+  }
+}
