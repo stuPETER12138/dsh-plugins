@@ -62,9 +62,19 @@ const PLUGINS = [
     keywords: ['sticky', 'notes', 'sidebar', 'todo', 'memo', '便签', '灵感'],
   },
   {
+    dir: 'dsh-gamepad-voice',
+    category: 'interface',
+    keywords: ['gamepad', 'controller', 'voice', 'dictation', 'speech', 'sidebar', '手柄', '语音输入', '语音转写'],
+  },
+  {
     dir: 'dsh-usage-stats',
     category: 'insight',
-    keywords: ['usage', 'tokens', 'cost', 'statistics', 'dashboard', '用量', '成本'],
+    keywords: ['usage', 'tokens', 'cost', 'statistics', 'dashboard', 'resources', 'cpu', 'memory', 'disk', 'cleanup', '用量', '成本', '资源', '内存', '磁盘', '清理'],
+  },
+  {
+    dir: 'dsh-agent-memory',
+    category: 'assistant',
+    keywords: ['memory', 'long-term-memory', 'personalization', 'system-prompt', 'sidebar', 'semantic', 'episodic', 'procedural', '记忆', '长期记忆', '个性化'],
   },
 ]
 
@@ -196,8 +206,8 @@ function main() {
       zh: 'stuPETER12138 的 DSH 插件集',
     },
     description: {
-      en: 'Personal DeepSeek Harness web plugins: notifications, session sharing, sticky notes, and usage statistics.',
-      zh: '自用的 DeepSeek Harness Web 插件集：任务通知、会话分享、便签墙与用量统计。',
+      en: 'Personal DeepSeek Harness web plugins: notifications, session sharing, sticky notes, usage statistics, long-term memory, and controller/voice control.',
+      zh: '自用的 DeepSeek Harness Web 插件集：任务通知、会话分享、便签墙、用量统计、长期记忆与手柄/语音控制。',
     },
     metadata: { categories: CATEGORIES },
     plugins,
