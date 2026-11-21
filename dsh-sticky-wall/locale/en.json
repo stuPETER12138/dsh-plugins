@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Sticky Wall · 便签墙",
-    "description": "A sticky-note wall in the left sidebar: capture an idea the moment it arrives, pin the important ones, and find them again by search."
+    "description": "A sticky-note wall and a session bookmark index in the left sidebar: capture an idea, pin what matters, and bookmark selected chat text by session. Open a bookmark to expand collapsed process layers, jump back to its exact words, and mark them clearly; archiving a session removes its bookmarks."
   }
 }

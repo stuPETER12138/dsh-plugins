@@ -1,8 +1,8 @@
 {
   "name": "@local/dsh-sticky-wall",
-  "version": "1.2.0",
+  "version": "1.4.4",
   "private": true,
-  "description": "A sticky-note wall in the DSH Web sidebar: capture inspiration at any time.",
+  "description": "A sticky-note wall and session bookmark index in the DSH Web sidebar.",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -21,6 +21,8 @@
     "dsh-plugin",
     "sticky-notes",
     "notes",
+    "bookmarks",
+    "session",
     "sidebar",
     "memo"
   ],
