@@ -1,6 +1,6 @@
 # 视觉设计基线
 
-本仓库的界面按 [kill-ai-slop](https://github.com/yetone/kill-ai-slop) 的判定来维护：问题不是"不够好看"，而是没做决定的默认值堆在一起。这份文档记录四个插件共同遵守的规则，以及每轮设计清理中保留了什么、为什么。
+本仓库的界面按 [kill-ai-slop](https://github.com/yetone/kill-ai-slop) 的判定来维护：问题不是"不够好看"，而是没做决定的默认值堆在一起。这份文档记录各插件共同遵守的规则，以及每轮设计清理中保留了什么、为什么。
 
 ## 规则
 
@@ -29,9 +29,11 @@
 - **`.sss-link:hover` 下划线**：这是文字链接，不是装饰性强调。
 - **LaTeX 的 `\overline` 与 `font-family:monospace`**：属于公式排版，不是 UI 里的 kicker / 终端 cosplay。
 - **README 许可证行的 `©`**：扫描器的 emoji 规则会把它当成 emoji，实际是版权符号。
+- **dsh-sticky-wall 会话选中文字的 999px 浮动操作条**：它占据宿主引用按钮原来的插入位置，必须沿用同一浮层的药丸形状（`--dsw-alias-button-floating-*`、`--dsw-elevation-panel`）才能和宿主动作条连成一体；便签墙 / 书签页面内部仍只用 4 / 8 / 12px 的小圆角。
+- **dsh-sticky-wall 书签跳转的黄色定位框**：只在跳转后的 12 秒内出现，不附带文字、徽标或按钮，只框住选中文字。浅色模式用 `#b97b00` 琥珀边框 + 18% 浅黄底，深色模式切到 `#ffd54f` 亮黄边框 + 22% 浅黄底；它不是常规表面，不参与便签墙的主题混色。
 
 ## 验证
 
-- 在隔离的 `DSH_HOME` 与临时 profile 里用 `link:` 安装四个插件，经本机 DSH Web + 无头 Chrome 截图核对浅色与深色下的实际渲染。本轮截图保存在 `.verify-design/`（被 `.gitignore` 忽略，仅本机复查用）。
+- 在隔离的 `DSH_HOME` 与临时 profile 里用 `link:` 安装全部插件，经本机 DSH Web + 无头 Chrome 截图核对浅色与深色下的实际渲染。本轮截图保存在 `.verify-design/`（被 `.gitignore` 忽略，仅本机复查用）。
 - `node scripts/verify-repo.mjs`；`dsh-session-share` 的 `tools/test-*.mjs` 四个测试。
 - 设计扫描使用 kill-ai-slop 的 `scan.mjs`（分析时临时放在仓库外，不随仓库分发）。修完后剩余命中应只有本文"有意保留"列出的类别。

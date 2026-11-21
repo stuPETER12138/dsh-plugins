@@ -695,6 +695,119 @@ Host 另有一套假服务自检（`tmp/` 下，未提交）：fork 继承前缀
 - 本机 `desktop` profile 里安装的是同一份源码，但**没有重启 DSH**：Host 半仍是旧进程里的代码，页面刷新后新面板会提示「Host 端还是旧版本」，重启后即恢复。
 - 浅色主题未单独截图；面板只使用 `--dsw-*` 主题 token（外加同 token 的 `color-mix()`），没有写死颜色。
 
+## 增量验证：dsh-usage-stats 3.0.0 资源与清理（2026-11-17）
+
+验证对象只有 `dsh-usage-stats`，其余插件与上面的记录相同。
+
+**改了什么**：插件从「用量统计」扩成「用量与资源」，并在面板里加入清理入口。
+
+- 新增 `resources.js`：Host 进程的 CPU（`process.cpuUsage` 差值，单核与整机两个口径）与内存、Windows 上整应用进程树的合计内存（`tasklist /FO CSV`，30 秒最多一次）、系统内存与核数。
+- 新增 `storage.js`：按会话目录求真实占用（含历史格式代际）、最后写入时间、附件 / 域存储 / 缓存三个目录的大小；`selectCleanup` 按「已归档 + 非运行 + `lastWrite <= cutoff`」选候选；`deleteSessionDirs` 只接受本次扫描出的行、要求目录正好在 `<root>/<group>/<id>` 且 basename 等于 id。
+- 新增 `GET/POST /dsh-usage-stats/cleanup`：GET 是 dry run，POST 必须带 `confirm: true` 与明确 id 列表；Host 重新扫描后复核资格，任何不再符合条件的 id 都 409 `not-eligible`，一个都不删。
+- 载荷新增 `resources` / `storage` / `cleanup` 三段；面板新增「资源占用」卡与「可回收空间」卡（勾选 → 删除 → 二次确认）。
+- 新增 `scripts/storage-audit.mjs`（离线 dry run，默认只读，`--apply --confirm` 才删）与 `dsh-usage-stats/test/host.test.mjs`（7 个隔离测试）。
+- 展示名改为「用量与资源 / Usage & Resources」；包名与目录仍是 `@local/dsh-usage-stats`，已安装的 profile 不需要重装。
+
+**验证环境**：隔离 `DSH_HOME` + 临时 profile `verifyres` + `link:` 安装；从真实 `~/.dsh/sessions` 只读拷贝 9 个会话目录，把 mtime 改到 100 天前，并拷贝 `storages/workspace.json` 提供归档集合；`dsh --profile verifyres --port 0 --no-open` 起服务，用无头 Edge（CDP）打开页面点击侧栏「用量与资源」。
+
+**结果**：29/29 断言通过，0 console error、0 页面异常；Host 另有 7 个隔离单元测试全通过；`node scripts/verify-repo.mjs` 对本插件的 299 项检查中 0 失败。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| 载荷 | `resources` / `storage` / `cleanup` 三段齐全；`storage.sessions = 9`、`bytes > 0`；`cleanup.total.count = 9`、候选带大小与最后写入 | PASS |
+| 清理规则 | 9 个候选全部来自归档集合；`cleanup.archived.sessions = 9`；dry-run 路由与主载荷计划一致 | PASS |
+| 删除闸门 | 未带 `confirm` → `400 confirmation-required`；近期 / 未知 / 运行中的 id → `409 not-eligible` 且目录未动 | PASS |
+| 面板 | 侧栏入口、资源卡 4 个数字、可回收空间卡 9 行、10 个勾选框、摘要「9 个会话可删除 · 可释放 17 MB」 | PASS |
+| 两步删除 | 勾选 2 行 → 按钮变「删除选中的 2 个会话」→ 点击出现「确认删除」→ 取消后不删除 | PASS |
+| 资源数字 | CPU 整机 0.3%（Host 进程 4.4% · 16 核）、DSH 内存 2.5 GB（7 个进程）、系统内存 14 GB / 23.3 GB | PASS |
+
+Host 自检（`node --test dsh-usage-stats/test/host.test.mjs`，临时 home，不碰真实数据）：载荷三段、dry-run 与载荷一致、未确认拒绝、近期 / 未知 / 运行中三种拒绝且目录不变、
+确认后只删符合条件的两个会话、`selectCleanup` 的 90 天边界（正好 90 天前保留、早 1 分钟入选）、`deleteSessionDirs` 对越界路径拒绝。
+
+**残余风险与说明**：
+
+- 截图证据在 `.verify-usage-stats/evidence/20261117-003918-resources-4/`（`panel-top.png`、`panel-cleanup.png`、`panel-confirm.png`、`payload.json`，临时目录，被 `.gitignore` 覆盖）。
+- 本机真实归档会话最早只有 65 天，默认 90 天窗口下候选为 0（`node scripts/storage-audit.mjs --days 90` 输出 `No session matches`）；60 天 27 个 / 11.7 MB，45 天 37 个 / 22.0 MB，30 天 53 个 / 27.4 MB。这是数据分布问题，不是规则问题。
+- 本机 `desktop` profile 未重启 DSH：Host 半仍是 2.3.0 的旧载荷，页面刷新后新面板会提示「Host 端还是旧版本」，重启后即恢复。
+- 整应用内存只在 Windows 上取（`tasklist`），其它平台退化为 Host 进程数字并在面板注明；浅色主题未单独截图，面板只用 `--dsw-*` token。
+
+## 增量验证：dsh-gamepad-voice 1.0.0 手柄与语音（2026-11-19）
+
+验证对象只有新增的 `dsh-gamepad-voice`，其余插件与上面的记录相同。宿主版本为 DSH Desktop `0.2.2-rc.5`。
+
+**改了什么**：新增纯浏览器侧插件：左侧栏「手柄与语音」入口与整页控制面板、全局 Gamepad API 轮询（会话 / 面板切换、发送草稿、停止回复、新建会话、按住 Y 录音）、
+用 `getUserMedia` + `MediaRecorder` + `OfflineAudioContext` 录成 16 kHz 单声道 WAV，再交给可选插件「语音输入」挂载的 `remote.speech` 做本机转写，
+默认经 `conversation.input.requestDraftInitialization(..., { whenDraftExists: 'append' })` 插入当前草稿，也可切换为直接发送；另有 `shell.overlay` 帧级录音 / 结果提示条。
+
+**验证方式**：
+
+1. `node dsh-gamepad-voice/tools/test-client.mjs`：用假 `window.__ModuleLoader__`、假 React、假手柄、假麦克风栈与假 DSH 客户端服务驱动浏览器半边的分支；假 Remote 故意返回 `{ ok, value | error }` 信封，覆盖真实 Client Remote 的返回形状。
+   同时静态检查两份字典的键。
+2. 隔离 `DSH_HOME` + 临时 profile `verifygv2`（`--from-default-profile web`）+ `link:` 安装本插件；把已随安装包提供的「语音输入」bundle 名加入该临时 profile 的 bundle 列表（不下载模型），
+   `dsh --profile verifygv2 --port 0 --no-open` 起服务，确认首页 `__DSH_BOOT__` 列出 `@local/dsh-gamepad-voice` 且 `/plugins/.../client.js` 返回 200。
+3. 无头 Chrome（CDP，临时 `--user-data-dir`）打开该 URL，点击侧栏「手柄与语音」，读取真实 DOM 与 console / exception 事件。全程只使用隔离 home 与临时 profile，不读取已认证 Desktop 页面的 token。
+
+**结果**：集成测试 239 项断言全部通过；隔离 profile 中插件安装结果为 `application: applied`、`warnings: []`，插件行 `gamepad-voice` 为 `active`、bundle 为 `enabled + installed`；
+CDP 检查 0 exception、0 console error、0 slot entry crash，侧栏入口可点击，页面按「语音输入 → 手柄控制 → 怎么用 / 数据与隐私」渲染，语音区正确识别出
+`SenseVoiceSmall (INT8) · 模型未准备`（证明 `RemoteResult` 信封已正确解包），显示「准备语音模型」按钮、徽标「语音待准备」，「按住说话」在模型就绪前被禁用并给出原因；
+按键映射折叠为「按键映射 · 12」的 details。另邀请独立子代理做了 UI/UX 审查与 DSH API 契约审查，修复了信封解包、录音安全结束、转写重复投递/静默丢字、
+LB 误触直接发送、失焦/手柄断开/页面隐藏未停止录音、语音不可用无入口、面板轮换选中不存在的 main 面板等问题。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| 浏览器模块 | 首页 `__DSH_BOOT__` 含本插件 id；client bundle 路由 200（100,363 bytes）；注入的 `<style data-dsh-plugin="gamepad-voice">` 存在 | PASS |
+| 侧栏入口 | 真实 DOM 中找到 `sidebar.panellist` 按钮「手柄与语音」，点击后主区切到本插件面板 | PASS |
+| 面板渲染 | `.gv-page`、标题、4 个区块标题、`按键映射 · 12`、状态徽标「未连接手柄」「语音待准备」、语音 CTA「准备语音模型」 | PASS |
+| Remote 信封 | 假 Remote 返回 `{ ok, value }` 时 providerId / providerName / readiness / languages / maxSeconds 均正确；`{ ok:false, error }` 会进入 lastError 与 HUD，不投递文字 | PASS（集成测试） |
+| 手柄逻辑 | 假手柄：D-pad 会话/面板切换、A 发送、B 停止、X 新建、LB **按住**去向往返/短按不切换、RB 语言循环、禁用与失焦不触发 | PASS（集成测试） |
+| 语音链路 | 假麦克风：按住开始、松开生成 RIFF/WAVE 16 kHz、调用 `transcribe`、插入草稿（append）或直接发送、B 取消不转写、麦克风拒绝回到 idle、录音中手柄断开 / 窗口失焦会结束并转写、Esc 取消不转写 | PASS（集成测试） |
+| 语音降级 | 隔离 profile 未下载模型时页面显示「语音待准备」、禁用「按住说话」并给出原因，无异常 | PASS |
+
+**残余风险与说明**：
+
+- 无头 Chrome 中没有真实手柄；按键逻辑由假手柄测试覆盖，**真实手柄与真实麦克风**需要在桌面端人工确认。
+- 隔离 profile 的「语音输入」未下载模型，因此真实录音 → 转写 → 插入的端到端链路未在该 profile 跑通；本机 `desktop` profile 的「语音输入」处于启用状态且 SenseVoice 模型已在
+  `~/.dsh/speech-to-text/sensevoice` 就绪，页面刷新后应显示「语音可用」。真实录音转写未在自动化环境验证。
+- 本机 `desktop` profile 已通过插件管理器安装本插件（`application: applied`）；安装后修改过 `client.js`，需要**刷新一次 DSH 页面**加载新模块。
+- 未对已认证的 Desktop 页面做浏览器自动化（未读取其 token）；浅色 / 深色主题与真实视觉排版未截图核对，页面只使用 `--dsw-*` token。
+- 插件尚未发布到 `index.json`：按仓库发布流程需要先提交插件代码，再用 `scripts/generate-index.mjs` 固定到该 commit；本机以 `link:` 安装，无需索引。
+
+## 增量验证：dsh-gamepad-voice 1.1.0 Xbox One 标识与语音修复（2026-11-19）
+
+**问题**：用户反馈手柄语音功能不可用。复查与复现后确认了三个独立原因：
+
+1. **语音可用性判断把「按需加载」当成未就绪**：SenseVoice 模型已完整下载时，语音服务报告的 `preparation.phase` 是 `standby`（文件在磁盘上、首次转写时才载入内存）。1.0.0 只接受 `ready`，于是页面显示「语音待准备」、禁用「按住说话」，手柄 Y 也不会开始录音。这是用户遇到的主要问题。
+2. **「准备语音模型」少传参数**：Host Remote 的 `speech.prepare(providerId, options?)` 在客户端生成代码中仍校验参数个数；1.0.0 只传 1 个参数，报 `client api: speech/prepare expected 2 argument(s), got 1`，模型准备按钮实际不可用。
+3. **手柄连接状态**：目视检查时 Windows 设备管理器里没有手柄；复查时已出现 `Xbox 游戏设备` / `XINPUT 兼容的 HID 设备`。说明手柄链路本身正常，但用户在未连接或手柄未唤醒时会看到「没有检测到手柄」——这是预期行为，页面现在给出 USB/蓝牙/唤醒说明。
+
+**改了什么**（`@local/dsh-gamepad-voice` 1.1.0）：
+
+- 语音可用状态接受 `ready`、`standby`、`waking`；`standby` 显示为「已就绪（按需加载）」，不再禁用录音；「准备语音模型」改为 `prepare(providerId, undefined)`。
+- 全部按键标签改为 Xbox One 键位：A/B/X/Y 使用 Xbox One 面板键四色圆形图标，LB/RB、View、Menu、十字键使用对应图形；页面每个动作、语音按钮、转写去向、识别语言都带按键图标。
+- 新增左下角 Xbox One 按键提示条（连接手柄时显示，可在页面关闭）；顶部徽标显示「Xbox One 已连接 / 手柄已连接 / 未连接手柄」。
+- 页面按「语音输入 → 手柄控制 → 怎么用」排列，按键映射折叠为 details；补充「语音或手柄不工作时」排查步骤。
+- 同时修复上一轮审查发现的录音安全、转写重复投递等问题（见上一条记录）。
+
+**验证方式**：隔离 `DSH_HOME` + 临时 profile + `link:` 安装；将真实 `~/.dsh/speech-to-text/sensevoice/models` 只读复制到临时 home，启用随包「语音输入」bundle；
+用 Windows SAPI（Microsoft Huihui，16 kHz 单声道 WAV）合成「你好，这是手柄语音测试。请把这句话转成文字。」作为 Chrome 的 fake microphone 输入；
+通过 CDP 在页面加载前注入 `navigator.getGamepads`（Xbox One Controller、standard mapping）并模拟 Y 按下/松开，`--use-fake-ui-for-media-stream` 自动授权麦克风。
+
+**结果**：263 项集成测试全部通过；真实浏览器端到端通过。
+
+| 层 | 检查项 | 结果 |
+| --- | --- | --- |
+| 语音就绪 | 模型在磁盘上时 provider 为 `SenseVoiceSmall (INT8) · 已就绪（按需加载）`，顶部徽标「语音可用」，「按住说话」可用 | PASS |
+| 手柄识别 | 注入的 Xbox One Controller（standard mapping）被识别，顶部徽标「Xbox One 已连接」，页面显示手柄名称与「使用中」 | PASS |
+| 按键提示条 | 左下角渲染 Xbox One 提示：A 发送草稿、B 停止回复、X 新建会话、Y 按住说话、LB 长按切去向、RB 切换语言、↑↓ 会话、←→ 面板、View 回到对话、Menu 打开本页 | PASS |
+| 端到端转写 | 按住 Y → HUD「正在听写…」计时 → 松开 → 模型按需加载 → 转写文字「你好，这是手柄语音测试。 请把这句话。」→「已插入当前草稿」出现在对话输入框 | PASS |
+| 错误与异常 | 0 exception、0 console error、0 slot entry crash | PASS |
+
+**残余风险与说明**：
+
+- 自动化里用的是注入的 Xbox One 手柄对象与合成语音；**真实手柄按键与真实麦克风**仍需桌面端人工确认（Windows 已识别 `Xbox 游戏设备`，理论上一致）。
+- 本机 `desktop` profile 通过 `link:` 安装的是同一份源码；改完 `client.js` 后需要**刷新一次 DSH 页面**，若仍是旧界面则重启 DSH Desktop。
+- `index.json` 仍未重新生成（需先提交插件代码再运行 `scripts/generate-index.mjs`）；不影响本机 `link:` 安装。
+
 ## 结论
 
 在 DSH Desktop `0.2.2-rc.1` 上，上述插件（首次验证时为 5 个，其中 `dsh-style-studio` 已于 2026-11-16 移除）均可通过真实 CLI 安装、进入 profile 组合包、由 Host 启动加载，
