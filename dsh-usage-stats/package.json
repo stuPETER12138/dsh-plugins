@@ -1,8 +1,8 @@
 {
   "name": "@local/dsh-usage-stats",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "Token usage and estimated cost of this machine's real session logs, in one compact sidebar panel.",
+  "description": "Token usage and estimated cost, this machine's DSH resources, and reclaimable session logs, in one sidebar panel.",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -23,10 +23,17 @@
     "cost",
     "usage",
     "statistics",
-    "dashboard"
+    "dashboard",
+    "resources",
+    "cpu",
+    "memory",
+    "disk",
+    "cleanup"
   ],
   "exports": {
     ".": "./index.js",
+    "./storage": "./storage.js",
+    "./resources": "./resources.js",
     "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
@@ -35,6 +42,8 @@
   "files": [
     "index.js",
     "client.js",
+    "storage.js",
+    "resources.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",

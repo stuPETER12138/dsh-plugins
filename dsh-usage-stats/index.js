@@ -1,19 +1,30 @@
 /**
- * Host half of `@local/dsh-usage-stats`.
+ * Host half of `@local/dsh-usage-stats` — the "Usage & Resources" panel.
  *
- * Folds this machine's own session logs into token and cost figures and answers
- * one loopback-only JSON route with a single range. Sources, all public Services:
+ * Three questions, one loopback-only route:
  *
- *  - `sessionPersistence.list()` names every stored session and its revision; a
- *    stored summary is read again only when that revision moved.
- *  - `sessionPersistence.open(id, 'read')` reads one stored log without taking
- *    write ownership; `sessionQuery.readSession()` is the fallback for a log the
- *    persistence backend cannot open before migrating it.
- *  - `sessions` yields the live in-memory sessions, folded forward from the last
- *    event already counted, so a poll only pays for the events that arrived.
+ *  1. Tokens and cost, folded from this machine's own session logs:
+ *     - `sessionPersistence.list()` names every stored session and its revision;
+ *       a stored summary is read again only when that revision moved.
+ *     - `sessionPersistence.open(id, 'read')` reads one stored log without
+ *       taking write ownership; `sessionQuery.readSession()` is the fallback for
+ *       a log the persistence backend cannot open before migrating it.
+ *     - `sessions` yields the live in-memory sessions, folded forward from the
+ *       last event already counted, so a poll only pays for the events that
+ *       arrived.
+ *     Usage is `assistant/message.usage`; cost prices it with `PRICES` (USD per
+ *     1M tokens) and `FALLBACK` for models the table does not name.
  *
- * Usage is `assistant/message.usage`; cost prices it with `PRICES` (USD per 1M
- * tokens) and `FALLBACK` for models the table does not name.
+ *  2. Machine resources: the Host process's CPU and memory, the whole Desktop
+ *     application's memory, and the system totals (`resources.js`).
+ *
+ *  3. Disk: the session log tree, the attachment store, the domain storage and
+ *     the cache (`storage.js`), plus the cleanup plan for archived sessions.
+ *
+ * A fourth, write route applies that plan: `POST /dsh-usage-stats/cleanup`
+ * requires `confirm: true` and an explicit id list, re-plans against a fresh
+ * scan, refuses anything no longer eligible, and only then removes session
+ * directories inside the scanned root.
  *
  * @module @local/dsh-usage-stats
  */
@@ -21,18 +32,27 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
+import { createResourceSampler } from './resources.js'
+import { DAY_MS, MAX_DELETE_BATCH, deleteSessionDirs, scanExtras, scanSessions, selectCleanup } from './storage.js'
+
 const ROUTE = '/dsh-usage-stats'
-const DAY_MS = 86_400_000
+const ROUTE_CLEANUP = ROUTE + '/cleanup'
 /** Dense timeline rows; a longer history is listed by its active days only. */
 const MAX_TIMELINE_DAYS = 1100
 /** Sessions listed per response; the rest still count in the totals. */
 const MAX_SESSIONS = 100
+/** Cleanup rows listed per response; the totals count them all. */
+const MAX_CLEANUP_ROWS = 200
 /** Stored-log reads in flight; decompression is the expensive part. */
 const READ_CONCURRENCY = 8
 /** One unreadable log may not stall a scan. */
 const READ_TIMEOUT_MS = 60_000
 /** Re-enumeration interval while the panel polls. */
 const LIST_INTERVAL_MS = 15_000
+/** Disk re-measurement interval while the panel polls. */
+const STORAGE_INTERVAL_MS = 15_000
+/** A delete request body larger than this is refused unread. */
+const MAX_BODY_BYTES = 256 * 1024
 const CACHE_VERSION = 1
 
 /**
@@ -157,6 +177,17 @@ function priceUsage(rate, usage) {
   )
 }
 
+/** The Harness home: the profile directory's grandparent, or the default. */
+function dshHome() {
+  const profileDir = process.env.DSH_PROFILE_DIR
+  const home =
+    process.env.DSH_HOME ||
+    // The profile directory is `<home>/profiles/<name>`.
+    (profileDir ? path.dirname(path.dirname(profileDir)) : '') ||
+    path.join(process.env.USERPROFILE ?? process.env.HOME ?? '', '.dsh')
+  return path.isAbsolute(home) ? home : null
+}
+
 // ── per-session fold ───────────────────────────────────────────────────────
 
 /** A folded session: plain JSON, so the cache is a `JSON.stringify` away. */
@@ -236,17 +267,6 @@ function foldEvents(id, events, priceFor) {
 }
 
 // ── the durable summary cache ──────────────────────────────────────────────
-
-/** Cache location inside the Harness home; null disables persistence. */
-function cachePath() {
-  const profileDir = process.env.DSH_PROFILE_DIR
-  const home =
-    process.env.DSH_HOME ||
-    // The profile directory is `<home>/profiles/<name>`.
-    (profileDir ? path.dirname(path.dirname(profileDir)) : '') ||
-    path.join(process.env.USERPROFILE ?? process.env.HOME ?? '', '.dsh')
-  return path.isAbsolute(home) ? path.join(home, 'cache', 'dsh-usage-stats', 'summaries.json') : null
-}
 
 /** Fingerprint of the costing rules a cached summary was priced with. */
 function pricesFingerprint(config) {
@@ -428,6 +448,171 @@ function summarizeLive(state, session) {
   return entry.summary
 }
 
+// ── disk footprint and cleanup plan ────────────────────────────────────────
+
+/**
+ * The sessions root this profile writes to.
+ *
+ * The shipped layout is `<home>/sessions`, but the persistence backend accepts
+ * a configured root, so a stored log's own path wins when one is available.
+ * Resolution happens once per process: the root does not move under a live Host.
+ *
+ * @returns {Promise<string|null>}
+ */
+async function resolveSessionsRoot(ctx, state) {
+  if (state.sessionsRoot !== null) return state.sessionsRoot
+  let root = state.home === null ? null : path.join(state.home, 'sessions')
+  const persistence = ctx.get('sessionPersistence')
+  if (persistence !== undefined) {
+    try {
+      const snapshots = await persistence.list()
+      for (const snapshot of snapshots) {
+        const file = snapshot?.location?.path
+        if (typeof file === 'string' && path.isAbsolute(file)) {
+          // `<root>/<group>/<session id>/<log file>`
+          root = path.dirname(path.dirname(path.dirname(file)))
+          break
+        }
+      }
+    } catch (_error) {
+      /* keep the home default */
+    }
+  }
+  state.sessionsRoot = root
+  return root
+}
+
+/**
+ * Measure the disk trees and, when a session root is known, the session tree.
+ *
+ * At most one scan runs at a time; a caller that asks while one is in flight
+ * joins it. `force` skips the freshness window, which is what the delete route
+ * uses before validating a plan.
+ *
+ * @param {object} ctx - plugin context.
+ * @param {object} state - plugin state.
+ * @param {{force?: boolean}} [options]
+ * @returns {Promise<void>}
+ */
+function scanStorage(ctx, state, options = {}) {
+  const force = options.force === true
+  if (state.storageTask !== null) return state.storageTask
+  if (!force && state.storageAt !== 0 && Date.now() - state.storageAt < STORAGE_INTERVAL_MS) {
+    return Promise.resolve()
+  }
+
+  state.storageScanning = true
+  state.storageTask = (async () => {
+    try {
+      const root = await resolveSessionsRoot(ctx, state)
+      if (root === null) throw new Error('cannot locate a sessions directory for this profile')
+      const scan = await scanSessions(root)
+      state.storage = { ...scan, extras: await scanExtras(state.home) }
+      state.storageError = null
+    } catch (error) {
+      state.storageError = messageOf(error)
+    } finally {
+      state.storageScanning = false
+      state.storageAt = Date.now()
+      state.storageTask = null
+    }
+  })()
+  return state.storageTask
+}
+
+/** The archive set, read defensively: the registry may not be mounted or ready. */
+function readArchivedIds(ctx) {
+  const registry = ctx.get('workspaceRegistry')
+  if (registry === undefined || registry === null) return []
+  try {
+    const ids = registry.archivedSessionIds
+    return Array.isArray(ids) ? ids.map(String) : []
+  } catch (_error) {
+    return []
+  }
+}
+
+/** Sessions running in this process, which cleanup must never touch. */
+function readLiveIds(ctx) {
+  return ctx.sessions.list().map((session) => String(session.id))
+}
+
+/** The cleanup plan over the last disk scan. */
+function computeCleanup(ctx, state, now) {
+  return selectCleanup({
+    sessions: state.storage?.sessions ?? [],
+    archivedIds: readArchivedIds(ctx),
+    liveIds: readLiveIds(ctx),
+    days: state.config.cleanupDays,
+    now,
+  })
+}
+
+/** Title of a session for the cleanup list: the fold already read it, else blank. */
+function titleOf(state, id) {
+  const stored = state.stored.get(id)
+  if (stored !== undefined && stored.summary.title !== '') return stored.summary.title
+  const live = state.live.get(id)
+  return live === undefined ? '' : live.summary.title
+}
+
+/** Cleanup section of a payload: the plan plus the rows the panel lists. */
+function buildCleanup(ctx, state) {
+  const plan = computeCleanup(ctx, state, Date.now())
+  const rows = plan.candidates.slice(0, MAX_CLEANUP_ROWS).map((candidate) => ({
+    id: candidate.id,
+    group: candidate.group,
+    bytes: candidate.bytes,
+    files: candidate.files,
+    lastWrite: candidate.lastWrite,
+    ageDays: candidate.ageDays,
+    title: titleOf(state, candidate.id),
+  }))
+  return {
+    ready: state.storage !== null,
+    error: state.storageError,
+    days: plan.days,
+    cutoff: plan.cutoff,
+    total: plan.total,
+    archived: plan.archived,
+    skipped: plan.skipped,
+    candidates: rows,
+    more: Math.max(0, plan.candidates.length - rows.length),
+  }
+}
+
+/** Disk section of a payload: aggregates only, never the whole session table. */
+function buildStorage(state) {
+  const scan = state.storage
+  const sessions = scan?.sessions ?? []
+  const extras = scan?.extras ?? []
+  return {
+    at: scan?.at ?? 0,
+    root: scan?.root ?? state.sessionsRoot,
+    scanning: state.storageScanning,
+    error: state.storageError,
+    sessions: sessions.length,
+    files: sessions.reduce((sum, session) => sum + session.files, 0),
+    bytes: sessions.reduce((sum, session) => sum + session.bytes, 0),
+    extras,
+    extrasBytes: extras.reduce((sum, extra) => sum + extra.bytes, 0),
+  }
+}
+
+/** Resource section of a payload: Host, whole app, and the machine. */
+function buildResources(state) {
+  const sample = state.resources.sample()
+  const system = sample.system
+  return {
+    at: sample.at,
+    host: sample.process,
+    app: sample.app,
+    appError: sample.appError,
+    system: { ...system, freeRatio: system.totalBytes > 0 ? system.freeBytes / system.totalBytes : 0 },
+    tray: state.resources.trackApp,
+  }
+}
+
 // ── aggregate ──────────────────────────────────────────────────────────────
 
 /** Add one model bucket into a model-total table. */
@@ -454,7 +639,8 @@ function timelineRow(day, bucket) {
 
 /**
  * Build the response body: the totals, timeline, model composition and session
- * list of one range, derived on demand from the summary maps.
+ * list of one range, derived on demand from the summary maps, plus the machine
+ * and disk sections that are independent of the range.
  */
 function buildPayload(ctx, state, days) {
   const now = Date.now()
@@ -567,6 +753,9 @@ function buildPayload(ctx, state, days) {
     timeline,
     models,
     sessions: sessions.slice(0, MAX_SESSIONS),
+    resources: buildResources(state),
+    storage: buildStorage(state),
+    cleanup: buildCleanup(ctx, state),
   }
 }
 
@@ -626,17 +815,54 @@ function readDays(url) {
   return Math.min(3660, value)
 }
 
+/** A bounded JSON request body; anything larger or malformed rejects. */
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    let size = 0
+    req.on('data', (chunk) => {
+      size += chunk.length
+      if (size > MAX_BODY_BYTES) {
+        reject(new Error('request body is larger than ' + MAX_BODY_BYTES + ' bytes'))
+        req.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      if (chunks.length === 0) {
+        resolve({})
+        return
+      }
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')))
+      } catch (_error) {
+        reject(new Error('request body is not valid JSON'))
+      }
+    })
+    req.on('error', (error) => reject(error))
+  })
+}
+
 // ── plugin ─────────────────────────────────────────────────────────────────
 
 /** Services this Host half needs before it activates. */
 export const inject = ['webServer', 'sessions', 'sessionPersistence']
 
-/** Merge the user's config over the shipped prices and fallback rates. */
+/**
+ * Merge the user's config over the shipped prices and fallback rates, and read
+ * the two feature knobs: the cleanup age and whole-application memory tracking.
+ */
 function resolveConfig(config) {
   const input = isObject(config) ? config : {}
+  const cleanup = isObject(input.cleanup) ? input.cleanup : {}
+  const resources = isObject(input.resources) ? input.resources : {}
+  const days = Number.parseInt(cleanup.days ?? input.cleanupDays ?? '', 10)
   return {
     prices: { ...PRICES, ...(isObject(input.prices) ? input.prices : {}) },
     fallback: { ...FALLBACK, ...(isObject(input.fallback) ? input.fallback : {}) },
+    cleanupDays: Number.isFinite(days) && days > 0 ? Math.min(3650, Math.max(1, days)) : 90,
+    appProcesses: resources.appProcesses !== false && input.appProcesses !== false,
   }
 }
 
@@ -645,8 +871,11 @@ function resolveConfig(config) {
  * that never opens the panel pays nothing.
  */
 export function apply(ctx, config) {
+  const home = dshHome()
+  const resolved = resolveConfig(config)
   const state = {
-    config: resolveConfig(config),
+    config: resolved,
+    home,
     stored: new Map(), // sessionId -> { revision, summary }
     live: new Map(), // sessionId -> { seq, summary }
     scanning: false,
@@ -655,10 +884,24 @@ export function apply(ctx, config) {
     failed: 0,
     error: null,
     lastScanAt: 0,
-    cacheFile: cachePath(),
+    cacheFile: home === null ? null : path.join(home, 'cache', 'dsh-usage-stats', 'summaries.json'),
+    sessionsRoot: null,
+    storage: null,
+    storageTask: null,
+    storageScanning: false,
+    storageAt: 0,
+    storageError: null,
+    resources: createResourceSampler({ appProcesses: resolved.appProcesses }),
   }
   state.priceFor = makePriceResolver(state.config.prices, state.config.fallback)
   const cacheReady = loadCache(state)
+
+  /** Scan work both read routes share. */
+  const warm = () => {
+    if (!state.scanning && Date.now() - state.lastScanAt > LIST_INTERVAL_MS) void scanStored(ctx, state)
+    if (state.storageTask === null && Date.now() - state.storageAt > STORAGE_INTERVAL_MS) void scanStorage(ctx, state)
+    void state.resources.refresh()
+  }
 
   const handler = async (req, res) => {
     if (!isLoopback(req)) {
@@ -671,14 +914,108 @@ export function apply(ctx, config) {
     }
     try {
       await cacheReady
-      if (!state.scanning && Date.now() - state.lastScanAt > LIST_INTERVAL_MS) void scanStored(ctx, state)
+      warm()
+      // The first paint should carry the disk figures instead of a gap for one poll.
+      if (state.storage === null) await scanStorage(ctx, state)
       sendJson(res, 200, buildPayload(ctx, state, readDays(new URL(req.url ?? ROUTE, 'http://localhost'))))
     } catch (error) {
       sendError(res, 500, 'internal-error', messageOf(error))
     }
   }
 
+  /**
+   * The cleanup route: `GET` is the dry run, `POST` applies an explicit id list.
+   * The two share the plan built from a scan no older than the request.
+   */
+  const handlerCleanup = async (req, res) => {
+    if (!isLoopback(req)) {
+      sendError(res, 403, 'forbidden', 'usage-stats is only reachable from this machine')
+      return
+    }
+    if (req.method === 'GET') {
+      try {
+        await cacheReady
+        warm()
+        if (state.storage === null) await scanStorage(ctx, state)
+        sendJson(res, 200, { storage: buildStorage(state), cleanup: buildCleanup(ctx, state) })
+      } catch (error) {
+        sendError(res, 500, 'internal-error', messageOf(error))
+      }
+      return
+    }
+    if (req.method !== 'POST') {
+      sendError(res, 405, 'method-not-allowed', 'GET or POST required')
+      return
+    }
+
+    let body
+    try {
+      body = await readJsonBody(req)
+    } catch (error) {
+      sendError(res, 400, 'invalid-body', messageOf(error))
+      return
+    }
+    if (!isObject(body) || body.confirm !== true) {
+      sendError(res, 400, 'confirmation-required', 'pass {"confirm": true} to delete anything')
+      return
+    }
+    const ids = Array.isArray(body.ids) ? [...new Set(body.ids.filter((id) => typeof id === 'string' && id !== ''))] : []
+    if (ids.length === 0) {
+      sendError(res, 400, 'no-sessions', 'no session ids were selected')
+      return
+    }
+    if (ids.length > MAX_DELETE_BATCH) {
+      sendError(res, 400, 'batch-too-large', 'at most ' + MAX_DELETE_BATCH + ' sessions can be removed in one request')
+      return
+    }
+
+    try {
+      await cacheReady
+      // Re-plan from the disk, not from whatever the browser last saw.
+      await scanStorage(ctx, state, { force: true })
+      if (state.storage === null || typeof state.storage.root !== 'string') {
+        sendError(res, 503, 'storage-unavailable', state.storageError ?? 'the sessions directory has not been measured yet')
+        return
+      }
+      const plan = computeCleanup(ctx, state, Date.now())
+      const eligible = new Set(plan.candidates.map((candidate) => candidate.id))
+      const refused = ids.filter((id) => !eligible.has(id))
+      if (refused.length > 0) {
+        sendJson(res, 409, {
+          error: {
+            code: 'not-eligible',
+            message:
+              'these sessions are not archived, were written recently, or are running; the list may be out of date',
+          },
+          refused,
+          cleanup: buildCleanup(ctx, state),
+        })
+        return
+      }
+
+      const result = await deleteSessionDirs({ root: state.storage.root, sessions: state.storage.sessions, ids })
+      // The logs are gone, so their folds must stop counting toward this run's
+      // token totals before the next re-enumeration notices the missing files.
+      for (const item of result.deleted) {
+        state.stored.delete(item.id)
+        state.live.delete(item.id)
+      }
+      await scanStorage(ctx, state, { force: true })
+      sendJson(res, 200, {
+        ok: result.failed.length === 0,
+        deleted: result.deleted,
+        failed: result.failed,
+        freedBytes: result.freedBytes,
+        storage: buildStorage(state),
+        cleanup: buildCleanup(ctx, state),
+      })
+    } catch (error) {
+      sendError(res, 500, 'internal-error', messageOf(error))
+    }
+  }
+
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: ROUTE, handler }), 'usage-stats: route')
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: ROUTE_CLEANUP, handler: handlerCleanup }), 'usage-stats: cleanup route')
   ctx.effect(
     () => () => {
       // Flush the most recent fold on reload; never before the first scan, so an

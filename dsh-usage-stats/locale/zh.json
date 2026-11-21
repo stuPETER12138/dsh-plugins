@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "用量统计 Usage Stats",
-    "description": "用本机真实会话日志统计 Token 消耗并估算成本。"
+    "title": "用量与资源 Usage & Resources",
+    "description": "统计本机 Token 消耗与成本、DSH 的 CPU / 内存 / 磁盘占用，并清理已归档的旧会话日志。"
   }
 }

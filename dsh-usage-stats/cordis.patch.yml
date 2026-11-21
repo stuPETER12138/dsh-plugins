@@ -1,11 +1,17 @@
-# Usage Stats bundle: one row. The Host half folds this machine's stored session
-# logs into token/cost figures and serves one loopback JSON route; the browser
-# half registers the left-sidebar entry and its panel.
+# Usage & Resources bundle: one row. The Host half folds this machine's stored
+# session logs into token/cost figures, samples CPU and memory, measures the
+# session, attachment, storage and cache trees, and serves loopback JSON routes;
+# the browser half registers the left-sidebar entry and its panel.
 #
 # Optional `config`:
-#   prices     USD per 1M tokens, keyed "provider/model" or bare "model"; an entry
-#              replaces the shipped entry with the same key (all four rates)
-#   fallback   rates for any model the table does not name
+#   prices        USD per 1M tokens, keyed "provider/model" or bare "model"; an
+#                 entry replaces the shipped entry with the same key (all four rates)
+#   fallback      rates for any model the table does not name
+#   cleanup:
+#     days        minimum age of an archived session before cleanup offers it
+#                 (default 90; clamped to 1..3650)
+#   resources:
+#     appProcesses  sum the whole Desktop process tree on Windows (default true)
 - insert:
     - id: usage-stats
       name: '@local/dsh-usage-stats'

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Usage Stats",
-    "description": "Token usage and estimated cost computed from this machine's real session logs."
+    "title": "Usage & Resources",
+    "description": "Token usage and cost, DSH's CPU, memory and disk footprint, and cleanup of archived session logs."
   }
 }

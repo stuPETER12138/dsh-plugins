@@ -1,10 +1,12 @@
-# 用量统计 · Usage Stats
+# 用量与资源 · Usage & Resources
 
-左侧栏里的一张只读面板：这段时间用了多少 Token、折算成多少钱。数字全部来自本机会话日志，不联网、不上传。
+左侧栏里的一张只读面板，回答三个问题：这段时间用了多少 Token、折合多少钱；DSH 在本机占了多少 CPU、内存和磁盘；哪些已归档的旧会话可以删掉、能腾出多少空间。
 
-- 包名：`@local/dsh-usage-stats`，版本 `2.3.0`
-- 形态：Host 半（`index.js`，读日志、算成本、出 JSON）+ Web 客户端（`client.js`，一张面板）
-- 数据来源：`$DSH_HOME/sessions` 下的会话日志（只读）
+数字全部来自本机，不联网、不上传。
+
+- 包名：`@local/dsh-usage-stats`，版本 `3.0.0`
+- 形态：Host 半（`index.js`，读日志、采样资源、量磁盘、出 JSON）+ Web 客户端（`client.js`，一张面板）
+- 数据来源：`$DSH_HOME/sessions` 下的会话日志（只读）、`assistant/message.usage` 事件、Node `process` / `os` 计数器、`$DSH_HOME` 下的磁盘目录
 - 本地缓存：`$DSH_HOME/cache/dsh-usage-stats/summaries.json`，删掉只会让下次打开重新扫描
 - 许可证：[MIT](../LICENSE)
 
@@ -12,24 +14,51 @@
 
 ## 面板
 
-打开左侧栏的「用量统计」，一张页面从上到下是：
+打开左侧栏的「用量与资源」，一张页面从上到下是：
 
 1. **统计范围**：右上角 30 天 / 90 天 / 全部，默认 90 天；切换后按新范围重新聚合。
-2. **概览卡**：左边是 Token 日历，右边是六个数字——Token 用量（附输入 / 输出 / 缓存命中拆分）、预估成本、消息数、会话数、活跃天数、最常用模型。窄屏时上下排列。
-3. **Token 日历**：一格一天，一列一周（周一开始），一行一个工作日位置；颜色分四档，按当天用量在区间内的排名分位取色（用量最多的四分之一天最深，像贡献图那样），没有用量的日子是空格。格子随范围放大缩小：列少时 30px，90 天 20px，再长收到 14px 并在卡内横向滚动。鼠标悬停在格子上，浏览器提示里是当天的 Token、成本与消息数。
-4. **模型用量**：范围内每个模型的 Token、成本与占比（占比是 Token 占比），按 Token 量从多到少排序；Token 占比不到 1% 的模型折叠成一行「其他」，悬停可以看到具体是哪些模型。不在价目表里的模型会用兜底单价，并在卡片下方注明。
-5. **会话用量**：范围内用掉 Token 的会话，按最近活动排序，最多列出最近 100 个；正在运行的会话前面有一个小圆点。
+2. **概览卡**：左边是 Token 日历，右边是六个数字——Token 用量（附输入 / 输出 / 缓存命中拆分）、预估成本、消息数、会话数、活跃天数、最常用模型。
+3. **资源占用**：四个数字——CPU（整机百分比，附 Host 进程自身占用与核数）、DSH 内存（整应用进程合计，附占全机比例与进程数）、系统内存（已用 / 总量，附可用）、会话日志占用（附会话数与附件占用）。每 5 秒刷新，磁盘每 15 秒重新量一次。
+4. **模型用量**：范围内每个模型的 Token、成本与占比，按 Token 量排序；占比不到 1% 的模型折叠成「其他」。
+5. **会话用量**：范围内用掉 Token 的会话，按最近活动排序，最多 100 个；运行中的会话前面有小圆点。
+6. **可回收空间**：已归档、且最后一次写入早于 90 天的会话清单——每行有勾选框、标题、大小、最后写入日期；底部给出「N 个会话可删除 / 可释放 X MB」，选中后点删除还要再确认一次，Host 复核通过才真正删除。
 
 日历的宽度跟着范围走：30 天约 6 列，90 天约 14 列，全部时间从第一天铺到今天。
 
-面板打开时每 5 秒取一次数据；Host 每 15 秒重新枚举一次会话日志，只重读内容变过的那几个，所以数字会跟着新对话往前走。
+面板打开时每 5 秒取一次数据；Host 每 15 秒重新枚举一次会话日志，只重读内容变过的那几个。
+
+## 可回收空间怎么算
+
+规则只有一条，Host 与面板用的是同一份实现（`storage.js`）：
+
+> **会话已归档** 且 **该会话目录里最后一次写入早于 `cleanup.days` 天前**（默认 90 天）且 **当前没有在运行**。
+
+- 「最后写入」取目录里最新文件的 mtime，不是最后一条事件的时间：重新打开过、继续聊过的会话会自动离开候选集。
+- 已归档的会话才能进候选：归档是 DSH 的「隐藏」标记，它本身不省任何空间（你的 144 个归档会话仍然占着全部日志的 56%），这正是这个卡片存在的原因。
+- 大小是整个会话目录的实际占用，包含历史格式代际（v3 / v4 各一份时都算）。
+- 预览（dry run）就是面板打开时看到的那张表，也可以离线跑：
+
+  ```powershell
+  node scripts/storage-audit.mjs --days 90          # 表格预览
+  node scripts/storage-audit.mjs --days 90 --json   # 机器可读
+  ```
+
+  脚本只读；加 `--apply --confirm` 才会删除，删的仍是同一套规则选出来的会话。
+
+- 删除是不可恢复的。**只删会话日志目录**，不动 `attachments`、`storages`、`cache`，也不改归档标记；删完后 `archivedSessionIds` 里会留下一条没有对应日志的 id，DSH 允许这种状态（取消归档仍会成功，不会产生未知引用），下次刷新侧栏时该会话自然消失。
+
+### 删除路径上的三道闸
+
+1. 面板：勾选 → 点删除 → 再点「确认删除」，两次都在同一个卡片内，不弹系统对话框。
+2. Host 复核：`POST` 必须带 `confirm: true` 和明确的 id 列表；Host 会重新量一次磁盘、重新算一次计划，任何不再符合规则的 id 都会被拒绝（`409 not-eligible`），一个都不删。
+3. 文件系统：只接受本次扫描出来的会话行，目录必须是 `<sessions root>/<分组>/<会话 id>`，basename 必须等于 id，越界路径直接判失败。
 
 ## 使用
 
-1. 点击左侧栏的 **用量统计**，默认看最近 90 天。
+1. 点击左侧栏的 **用量与资源**，默认看最近 90 天。
 2. 用右上角的分段控件切换 30 天 / 90 天 / 全部时间。
-3. 首次打开会先显示「索引中 n/N」，Host 正在把会话日志折叠成摘要；索引完之前也会显示已经算出来的部分。
-4. 面板底部注明了数据来源；所有数字都在本机算出来。
+3. 首次打开会先显示「索引中 n/N」，Host 正在把会话日志折叠成摘要。
+4. 想清理旧会话：滚到「可回收空间」，勾选（或全选）→ 删除 → 确认删除。
 
 ## 安装
 
@@ -41,13 +70,13 @@
 2. 打开 DSH Desktop → 左侧栏 **插件** → 右上角 **添加插件**。
 3. 填入本插件文件夹本身的绝对路径，例如 `D:\github\dsh-plugins\dsh-usage-stats`。
 4. 确认包名 / 版本 / 简介后点 **安装**，再点 **立即启用**。
-5. 左侧栏出现「用量统计」入口；没有的话刷新页面或重启 DSH Desktop。
+5. 左侧栏出现「用量与资源」入口；没有的话刷新页面或重启 DSH Desktop。
 
 ### 方式 A：从插件索引安装（需要 GitHub 可达）
 
 1. **插件** 页 → **发现** 标签 → **添加索引源**，填入
    `https://raw.githubusercontent.com/stuPETER12138/dsh-plugins/main/index.json`。
-2. 找到「用量统计 / Usage Stats」→ **安装** → **立即启用**。
+2. 找到「用量与资源 / Usage & Resources」→ **安装** → **立即启用**。
 
 ### 方式 D：命令行（非 Desktop 的 CLI profile）
 
@@ -58,18 +87,19 @@ dsh plugin --profile <profile> add "link:D:\github\dsh-plugins\dsh-usage-stats"
 ## 安装后确认
 
 1. **插件页**：「已安装插件」里出现 `@local/dsh-usage-stats`，开关是开启状态。
-2. **左侧栏**：出现「用量统计」入口，点开后能看到标题、范围控件、六个数字和日历。
+2. **左侧栏**：出现「用量与资源」入口，点开后能看到概览、资源占用、可回收空间三张卡。
 3. **Host 路由**（可选，排错用；端口以浏览器地址栏为准）：
 
    ```powershell
    Invoke-RestMethod 'http://127.0.0.1:59739/dsh-usage-stats?days=7' | Select-Object generatedAt
+   Invoke-RestMethod 'http://127.0.0.1:59739/dsh-usage-stats/cleanup' | Select-Object -ExpandProperty cleanup
    ```
 
-4. **缓存落盘**（可选）：索引完成后出现 `$DSH_HOME/cache/dsh-usage-stats/summaries.json`；再次打开面板会直接从它出数。
+4. **缓存落盘**（可选）：索引完成后出现 `$DSH_HOME/cache/dsh-usage-stats/summaries.json`。
 
 ## 配置
 
-插件开箱即用；`config` 只有两项，写在 profile 的 `cordis.patch.yml` 里 `usage-stats` 那一行（Windows 默认 `C:\Users\<用户名>\.dsh\profiles\desktop\cordis.patch.yml`）：
+插件开箱即用；`config` 写在 profile 的 `cordis.patch.yml` 里 `usage-stats` 那一行（Windows 默认 `C:\Users\<用户名>\.dsh\profiles\desktop\cordis.patch.yml`）：
 
 ```yaml
 - id: usage-stats
@@ -81,11 +111,16 @@ dsh plugin --profile <profile> add "link:D:\github\dsh-plugins\dsh-usage-stats"
       # 也可以加自己的模型；键可以是 provider/model，也可以是裸 model
       my-provider/my-model: { input: 1.0, output: 3.0, cacheRead: 0.1, cacheWrite: 0.1 }
     fallback: { input: 1.0, output: 3.0, cacheRead: 0.1, cacheWrite: 0.1 }
+    cleanup:
+      days: 90              # 可回收空间的最小年龄，默认 90，夹在 1..3650
+    resources:
+      appProcesses: true    # Windows 上把整个 Desktop 进程树的内存加起来，默认开
 ```
 
 - 单价单位是 **USD / 1M Token**；`fallback` 用于价目表里没有的模型，面板会给这些模型加注。
 - `prices` 的每一项**整条替换**内置价：写平价格式就四个字段都写全；写峰谷格式（`peak` / `offPeak` 两段）也是每段四个字段。
 - 改了价格会改变缓存的价格指纹，下次打开会按新价重算一遍。
+- `cleanup.days` 改了不需要重启：下一次轮询就按新窗口算计划。
 - 改完配置重启 DSH Desktop（或重新加载该 profile），再打开面板。
 
 ### 内置价格表（USD / 1M Token）
@@ -110,29 +145,35 @@ dsh plugin --profile <profile> add "link:D:\github\dsh-plugins\dsh-usage-stats"
 
 ## HTTP 接口
 
-Host 半只注册一个精确路由，供同源的浏览器半读取；字段说明见同目录 [API.md](API.md)。
+Host 半只注册两个精确路由，供同源的浏览器半读取；字段说明见同目录 [API.md](API.md)。
 
-| 路由 | 用途 |
-| --- | --- |
-| `GET /dsh-usage-stats?days=<n>` | 一个范围的完整载荷：`totals` + `timeline` + `models` + `sessions` |
+| 路由 | 方法 | 用途 |
+| --- | --- | --- |
+| `/dsh-usage-stats?days=<n>` | GET | 一个范围的完整载荷：`totals` + `timeline` + `models` + `sessions` + `resources` + `storage` + `cleanup` |
+| `/dsh-usage-stats/cleanup` | GET | 只要磁盘与清理计划的 dry run |
+| `/dsh-usage-stats/cleanup` | POST | 按 `{ "ids": [...], "confirm": true }` 删除；不接受未确认的请求 |
 
 - `days` 省略时按 `7`；`0` 表示全部时间；更大的值截断到 `3660`。
-- 只接受回环调用：peer 地址、`Host` 头、以及存在时的 `Origin` 头都必须是回环，否则 403；只接受 `GET`。
+- 只接受回环调用：peer 地址、`Host` 头、以及存在时的 `Origin` 头都必须是回环，否则 403。
+- POST 只收 JSON，体积上限 256 KB，一次最多 500 个 id。
 - 第一次读取请求才懒启动首次扫描：从不打开面板的 profile 不产生索引开销。
 
 ## 数据与隐私
 
-- **只读会话日志**：Token 与成本来自 `assistant/message.usage` 事件；插件通过 `sessionPersistence` / `sessionQuery` / `sessions` 这些公开服务读取，不自己解析日志格式，也不改 `$DSH_HOME/sessions` 里的内容。
+- **只读会话日志**：Token 与成本来自 `assistant/message.usage` 事件；插件通过 `sessionPersistence` / `sessionQuery` / `sessions` 这些公开服务读取，不自己解析日志格式。唯一会写会话目录的路径是「可回收空间」里你确认过的删除。
+- **资源数字**：Host 的 CPU / 内存来自 Node 的 `process.cpuUsage()` / `process.memoryUsage()`；系统内存来自 `os`；整应用内存来自 Windows 的 `tasklist`（只读一次进程列表，30 秒最多一次）。其它平台或拿不到时，面板退化成 Host 进程的数字并注明。
 - **本地缓存**：只存每个会话的 Token 计数、按模型 / 按天的分桶、标题和最近活动时间这些元数据，不存对话正文；每个会话几百字节。删掉它只会让下次打开重新扫描。
-- **不联网**：没有网络请求、没有遥测，唯一对外的是本机回环上的一个只读 JSON 接口。
-- **缓存校验**：每条摘要对应会话的持久化 revision，只有 revision 变了才重读那一个会话；价格表变化会让整份缓存失效。
+- **不联网**：没有网络请求、没有遥测，唯一对外的是本机回环上的两个只读 / 显式确认接口。
 
 ## 文件结构
 
 | 文件 | 作用 |
 | --- | --- |
-| `index.js` | Host 半：索引会话日志、折叠摘要、算成本、一个回环 HTTP 路由 |
+| `index.js` | Host 半：索引会话日志、折叠摘要、算成本、采样资源、出两个回环 HTTP 路由 |
+| `storage.js` | 磁盘树测量、清理计划选择、受控删除 |
+| `resources.js` | CPU / 内存采样（Host 进程、整应用、系统） |
 | `client.js` | 浏览器半：侧栏入口与面板（手写源码，无需构建） |
+| `test/host.test.mjs` | Host 半的隔离测试（临时 DSH_HOME，不碰真实数据） |
 | `cordis.patch.yml` | 组合补丁：向 profile 插入 `usage-stats` 这一行 |
 | `package.json` | 包声明：`dsh.bundle.patch` 与客户端注入配置 |
 | `locale/zh.json`、`locale/en.json` | 插件管理页显示的中 / 英文标题与描述 |
@@ -143,23 +184,25 @@ Host 半只注册一个精确路由，供同源的浏览器半读取；字段说
 ## 工作原理
 
 - **Host 半**把每个已存会话折叠成一份小摘要（Token、成本、按模型与按天的分桶）；摘要按持久化 revision 缓存在内存和 `summaries.json` 里，重启后先用缓存出数，再只重读变化过的会话。运行中的会话从内存 `sessions` 里增量折叠，所以轮询只花在新事件上。
-- **浏览器半**是普通的 DSH 客户端插件：向 `sidebar.panellist` 注册入口，向 `main` 注册同 id 的页面；它只 `fetch` 同源的那个路由，自己不读日志。图表是一排 CSS 柱子，没有图表库。
-- 数据量与耗时：冷扫描要解压并解析整份日志（本机 331 个文件约 151 MB），之后每次启动通常只重读 0 个；面板会显示索引进度。
+- **磁盘部分**每隔 15 秒量一次：会话根目录取自持久化后端报告的第一个日志路径（回退到 `$DSH_HOME/sessions`），逐个会话目录求和；附件、域存储、缓存三个目录单独求和。
+- **清理计划**把这份扫描结果与工作区注册表的 `archivedSessionIds`、当前运行中的会话 id 做集合运算，得到一个纯函数的候选表；面板只负责显示与勾选。
+- **浏览器半**是普通的 DSH 客户端插件：向 `sidebar.panellist` 注册入口，向 `main` 注册同 id 的页面；它只 `fetch` 同源路由，自己不读日志、不碰文件。
 
 ## 已知限制
 
 - **首次扫描慢**：空缓存时要读完整份日志，几百个会话需要几十秒；面板会显示进度。
+- **整应用内存只有 Windows 有**：Electron 没有给插件暴露进程树 API，这里用 `tasklist` 近似；其它平台只报 Host 进程。
+- **CPU 是自采样区间值**：两次轮询之间 Host 进程的平均占用，不和系统性能计数器对齐；面板同时给出单核与整机两个口径。
 - **成本只是估算**：按配置的单价表计算，不等于供应商账单；价目表过期也会让估算偏。
 - **Token 是供应商上报值**：没上报 usage 的失败调用不计入。
-- **峰谷规则不完整**：只按 UTC 工作日建模，不识别中国法定节假日。
-- **只统计本机**：只算这个 profile 能访问到的本机会话日志。
-- **会话列表有上限**：单个范围最多列出最近 100 个会话，其余仍计入合计；面板会注明。
-- **不是资源监控**：只统计 Token 与成本。
+- **只统计本机**：只算这个 profile 能访问到的本机会话日志与 `$DSH_HOME` 目录。
+- **会话列表有上限**：用量列表最多 100 个、清理清单最多 200 个，其余仍计入合计。
+- **删除不可撤销**：没有回收站；确认前请用「下载会话日志」导出需要保留的会话。
 
 ## 兼容性
 
-- 实测环境：DSH Desktop，Windows 11。Host 半依赖 `webServer`、`sessions`、`sessionPersistence`（旧格式日志回退到 `sessionQuery`）；浏览器半依赖 `sidebar.panellist`、`main` 插槽与 `locale` 服务。
-- 插件无第三方依赖、无构建步骤；`node --check index.js`、`node --check client.js` 即可做语法检查。
+- 实测环境：DSH Desktop，Windows 11。Host 半依赖 `webServer`、`sessions`、`sessionPersistence`（旧格式日志回退到 `sessionQuery`）；清理依赖 `workspaceRegistry.archivedSessionIds`，缺失时退化为「没有可回收会话」。浏览器半依赖 `sidebar.panellist`、`main` 插槽与 `locale` 服务。
+- 插件无第三方依赖、无构建步骤；`node --check index.js`、`node --check client.js` 即可做语法检查，`node --test dsh-usage-stats/test/host.test.mjs` 跑 Host 测试。
 - 升级后如果面板提示「Host 端还是旧版本」，说明浏览器已经拿到新代码而 DSH 进程还是旧的：重启 DSH 即可。
 
 ## 卸载与数据清理
@@ -172,7 +215,7 @@ Host 半只注册一个精确路由，供同源的浏览器半读取；字段说
    Remove-Item -Recurse -Force "$env:USERPROFILE\.dsh\cache\dsh-usage-stats"
    ```
 
-4. 插件不使用 `localStorage`，没有其他浏览器数据需要清理；会话日志不属于插件数据。
+4. 插件不使用 `localStorage`，没有其他浏览器数据需要清理；会话日志不属于插件数据，已删除的日志无法由卸载恢复。
 
 ## 许可证
 

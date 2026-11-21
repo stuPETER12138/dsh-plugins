@@ -1,11 +1,16 @@
 /**
- * Usage Stats — the browser half of `@local/dsh-usage-stats`.
+ * Usage & Resources — the browser half of `@local/dsh-usage-stats`.
  *
  * One left-sidebar entry (`sidebar.panellist`) and one panel (`main`, key
  * `usage-stats`). The panel polls the Host's single read route every few
- * seconds and renders, for the selected range: six totals, a calendar heatmap of
- * daily token usage, the model cost composition, and the sessions that used
- * tokens.
+ * seconds and renders: the token/cost overview of the selected range, machine
+ * resources (CPU and memory of DSH and the system), the model composition, the
+ * sessions that used tokens, and the reclaimable space of archived session logs.
+ *
+ * The cleanup card is the only destructive surface. It lists what the Host's
+ * dry run proposes, lets the reader tick rows, then asks again before a POST
+ * that carries the ids and `confirm: true`; the Host re-plans against a fresh
+ * disk scan and refuses anything no longer eligible.
  *
  * The heatmap is HTML and CSS — one cell per local day, one column per week, one
  * row per weekday, shade from the day's share of the busiest day — so there is no
@@ -30,6 +35,7 @@ window.__ModuleLoader__.load({
     const NS = 'usageStats'
     const PANEL_ID = 'usage-stats'
     const ROUTE = '/dsh-usage-stats'
+    const ROUTE_CLEANUP = ROUTE + '/cleanup'
     /** Poll cadence while the panel is open and visible. */
     const POLL_MS = 5000
     /** The panel opens on the last 90 days; `0` asks the Host for all time. */
@@ -46,9 +52,9 @@ window.__ModuleLoader__.load({
     // ── copy ───────────────────────────────────────────────────────────────
 
     const zh = {
-      panel: '用量统计',
-      title: '用量统计',
-      subtitle: '本机会话日志里的 Token 用量与估算成本',
+      panel: '用量与资源',
+      title: '用量与资源',
+      subtitle: 'Token 用量与成本、本机资源占用，以及可回收的会话日志空间',
       rangeLabel: '统计范围',
       range30: '30 天',
       range90: '90 天',
@@ -56,13 +62,13 @@ window.__ModuleLoader__.load({
       updatedAt: '更新于 {time}',
       scanning: '索引中 {scanned}/{total}',
       scanningShort: '索引中…',
-      loading: '正在读取用量统计…',
+      loading: '正在读取用量与资源…',
       loadFailed: '加载失败：{message}',
       retry: '重试',
       emptyTitle: '这段时间没有用量',
       emptyBody: '换一个统计范围，或聊一段之后回来再看。',
       tokens: 'Token 用量',
-      tokenBreakdown: '输入 {input} · 输出 {output} · 缓存 命中 {cacheRead}',
+      tokenBreakdown: '输入 {input} · 输出 {output} · 缓存 命中 {cacheRead}',
       cost: '预估成本',
       requests: '消息数',
       sessions: '会话数',
@@ -88,13 +94,55 @@ window.__ModuleLoader__.load({
       live: '进行中',
       failedLogs: '{count} 个会话日志读不出来，未计入统计。',
       staleHost: 'Host 端还是旧版本，重启 DSH 后再打开这个面板。',
-      footer: '数据来自本机会话日志里的 assistant/message.usage，不联网、不上传。',
+      footer: 'Token 与成本来自本机会话日志里的 assistant/message.usage；资源与磁盘数字在本机统计，不联网、不上传。',
+
+      resourcesTitle: '资源占用',
+      resourcesNote: 'Host 与本机 · 每 5 秒刷新',
+      resCpu: 'CPU · 整机',
+      resCpuNote: 'Host 进程 {host} · {cores} 核',
+      resCpuIdle: '采样中…',
+      resMemory: 'DSH 内存',
+      resMemoryNote: '占全机 {ratio} · {processes} 个进程',
+      resMemoryNoteHost: 'Host 进程',
+      resAppError: '整应用内存不可用：{message}',
+      resSystem: '系统内存',
+      resSystemNote: '共 {total} · 可用 {free}',
+      resDisk: '会话日志',
+      resDiskNote: '{sessions} 个会话 · 附件 {attachments}',
+      resDiskNoteBare: '{sessions} 个会话',
+      resScanning: '正在统计磁盘…',
+      resPending: '统计中…',
+
+      cleanupTitle: '可回收空间',
+      cleanupNote: '已归档 · 最后写入早于 {days} 天',
+      cleanupPending: '正在统计磁盘与归档状态…',
+      cleanupEmpty: '没有符合条件的会话。',
+      cleanupSummary: '{count} 个会话可删除',
+      cleanupBytes: '可释放 {size}',
+      cleanupArchived: '已归档 {count} 个，共 {size}',
+      cleanupSkipped: '{count} 个因最近写入被跳过。',
+      cleanupMore: '还有 {count} 个未列出，已计入可释放空间。',
+      cleanupSelectAll: '全选',
+      cleanupColSession: '会话',
+      cleanupColSize: '大小',
+      cleanupColWrite: '最后写入',
+      cleanupDelete: '删除选中的 {count} 个会话',
+      cleanupDeleteEmpty: '删除选中的会话',
+      cleanupConfirmTitle: '确认删除这些会话日志？',
+      cleanupConfirmBody: '将删除 {count} 个会话，释放 {size}。日志删除后不可恢复。',
+      cleanupCancel: '取消',
+      cleanupConfirm: '确认删除',
+      cleanupDeleting: '正在删除…',
+      cleanupDone: '已删除 {count} 个会话，释放 {size}。',
+      cleanupFailedCount: '{count} 个会话没有删掉，原因见 Host 日志。',
+      cleanupError: '删除失败：{message}',
+      cleanupHint: '只删除会话日志目录；归档状态、附件与插件缓存不受影响。',
     }
 
     const en = {
-      panel: 'Usage Stats',
-      title: 'Usage Stats',
-      subtitle: 'Token usage and estimated cost from this machine\u2019s session logs',
+      panel: 'Usage & Resources',
+      title: 'Usage & Resources',
+      subtitle: 'Token usage and cost, this machine\u2019s resources, and reclaimable session storage',
       rangeLabel: 'Range',
       range30: '30 days',
       range90: '90 days',
@@ -102,13 +150,13 @@ window.__ModuleLoader__.load({
       updatedAt: 'Updated {time}',
       scanning: 'Indexing {scanned}/{total}',
       scanningShort: 'Indexing…',
-      loading: 'Reading usage stats…',
-      loadFailed: 'Could not load usage stats: {message}',
+      loading: 'Reading usage and resources…',
+      loadFailed: 'Could not load: {message}',
       retry: 'Retry',
       emptyTitle: 'No usage in this range',
       emptyBody: 'Try another range, or come back after a conversation.',
       tokens: 'Tokens',
-      tokenBreakdown: 'in {input} · out {output} · cache hit {cacheRead}',
+      tokenBreakdown: 'in {input} · out {output} · cache hit {cacheRead}',
       cost: 'Est. cost',
       requests: 'Messages',
       sessions: 'Sessions',
@@ -134,7 +182,49 @@ window.__ModuleLoader__.load({
       live: 'Live',
       failedLogs: '{count} session logs could not be read and are not counted.',
       staleHost: 'The Host half is an older version. Restart DSH, then reopen this panel.',
-      footer: 'Figures come from this machine\u2019s session logs (assistant/message.usage). Nothing is sent anywhere.',
+      footer: 'Tokens and cost come from this machine\u2019s session logs (assistant/message.usage); resource and disk figures are measured here. Nothing is sent anywhere.',
+
+      resourcesTitle: 'Resources',
+      resourcesNote: 'Host and machine · refreshed every 5s',
+      resCpu: 'CPU · machine',
+      resCpuNote: 'Host process {host} · {cores} cores',
+      resCpuIdle: 'Sampling…',
+      resMemory: 'DSH memory',
+      resMemoryNote: '{ratio} of the machine · {processes} processes',
+      resMemoryNoteHost: 'Host process',
+      resAppError: 'Whole-app memory unavailable: {message}',
+      resSystem: 'System memory',
+      resSystemNote: 'of {total} · {free} free',
+      resDisk: 'Session logs',
+      resDiskNote: '{sessions} sessions · attachments {attachments}',
+      resDiskNoteBare: '{sessions} sessions',
+      resScanning: 'Measuring the disk…',
+      resPending: 'Measuring…',
+
+      cleanupTitle: 'Reclaimable space',
+      cleanupNote: 'Archived · last write older than {days} days',
+      cleanupPending: 'Measuring the disk and the archive set…',
+      cleanupEmpty: 'No session matches yet.',
+      cleanupSummary: '{count} sessions can be removed',
+      cleanupBytes: '{size} reclaimable',
+      cleanupArchived: '{count} archived in total, {size}',
+      cleanupSkipped: '{count} skipped because they were written recently.',
+      cleanupMore: '{count} more are not listed but count toward the total.',
+      cleanupSelectAll: 'Select all',
+      cleanupColSession: 'Session',
+      cleanupColSize: 'Size',
+      cleanupColWrite: 'Last write',
+      cleanupDelete: 'Delete {count} selected sessions',
+      cleanupDeleteEmpty: 'Delete selected sessions',
+      cleanupConfirmTitle: 'Delete these session logs?',
+      cleanupConfirmBody: '{count} sessions will be deleted, freeing {size}. Deleted logs cannot be recovered.',
+      cleanupCancel: 'Cancel',
+      cleanupConfirm: 'Delete',
+      cleanupDeleting: 'Deleting…',
+      cleanupDone: 'Deleted {count} sessions and freed {size}.',
+      cleanupFailedCount: '{count} sessions could not be removed; see the Host log.',
+      cleanupError: 'Delete failed: {message}',
+      cleanupHint: 'Only session log directories are removed; the archive set, attachments and plugin caches stay.',
     }
 
     // ── formatting ─────────────────────────────────────────────────────────
@@ -142,6 +232,7 @@ window.__ModuleLoader__.load({
     const EXACT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
     const CLOCK = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
     const ACTIVITY = new Intl.DateTimeFormat(undefined, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    const DATE = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })
     const MONTH = new Intl.DateTimeFormat(undefined, { month: 'short' })
 
     /** One decimal, with a trailing `.0` removed: 1200 -> "1.2", 2000 -> "2". */
@@ -161,6 +252,16 @@ window.__ModuleLoader__.load({
 
     const exact = (value) => EXACT.format(Math.round(value))
 
+    /** Bytes in the units a disk tool uses (1 KB = 1024 B). */
+    function bytes(value) {
+      const size = Math.abs(value)
+      if (!Number.isFinite(value)) return '—'
+      if (size >= 1024 ** 3) return trimDecimal(value / 1024 ** 3) + ' GB'
+      if (size >= 1024 ** 2) return Math.round(value / 1024 ** 2) + ' MB'
+      if (size >= 1024) return Math.round(value / 1024) + ' KB'
+      return Math.round(value) + ' B'
+    }
+
     /** Money with enough precision for fractions of a cent, never rounded to $0.00. */
     function usd(value) {
       const size = Math.abs(value)
@@ -176,8 +277,15 @@ window.__ModuleLoader__.load({
       return share === 0 && fraction > 0 ? '<1%' : share + '%'
     }
 
+    /** A CPU reading: one decimal below 10% so an idle Host still shows a number. */
+    function cpu(value) {
+      if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
+      return value < 10 ? value.toFixed(1) + '%' : Math.round(value) + '%'
+    }
+
     const clock = (ms) => CLOCK.format(new Date(ms))
     const activity = (ms) => (typeof ms === 'number' ? ACTIVITY.format(new Date(ms)) : '')
+    const date = (ms) => (typeof ms === 'number' ? DATE.format(new Date(ms)) : '')
 
     /** Tooltip for one day; the native `title` needs no component. */
     function dayTip(row) {
@@ -218,11 +326,11 @@ window.__ModuleLoader__.load({
       const cells = []
       const months = []
       for (const { row, time } of days) {
-        const date = new Date(time)
+        const current = new Date(time)
         const column = Math.round((mondayOf(time).getTime() - origin.getTime()) / WEEK_MS)
-        cells.push({ day: row.day, row, column, weekday: (date.getDay() + 6) % 7, level: shades.get(row.total) ?? 0 })
+        cells.push({ day: row.day, row, column, weekday: (current.getDay() + 6) % 7, level: shades.get(row.total) ?? 0 })
 
-        const label = MONTH.format(date)
+        const label = MONTH.format(current)
         const last = months[months.length - 1]
         if (last === undefined) months.push({ label, column })
         else if (last.label !== label && column - last.column >= 2) months.push({ label, column })
@@ -232,19 +340,36 @@ window.__ModuleLoader__.load({
 
     // ── network ────────────────────────────────────────────────────────────
 
-    async function fetchJson(url) {
-      const response = await fetch(url, { headers: { accept: 'application/json' } })
+    async function readJson(response) {
       if (!response.ok) {
         let message = 'HTTP ' + response.status
+        let body = null
         try {
-          const body = await response.json()
+          body = await response.json()
           if (typeof body?.error?.message === 'string') message = body.error.message
         } catch (_error) {
           /* a body that is not JSON keeps the status text */
         }
-        throw new Error(message)
+        const failure = new Error(message)
+        failure.body = body
+        failure.status = response.status
+        throw failure
       }
       return response.json()
+    }
+
+    async function fetchJson(url) {
+      return readJson(await fetch(url, { headers: { accept: 'application/json' } }))
+    }
+
+    async function postJson(url, payload) {
+      return readJson(
+        await fetch(url, {
+          method: 'POST',
+          headers: { accept: 'application/json', 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        }),
+      )
     }
 
     // ── icon ───────────────────────────────────────────────────────────────
@@ -401,6 +526,81 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * Machine resources. The memory figure prefers the whole Desktop tree and
+     * falls back to the Host process when the tree is unavailable, saying which
+     * one it is; the disk figure is the session log tree, with the attachment
+     * store alongside because it is the other large consumer.
+     */
+    function Resources(props) {
+      const { t, data } = props
+      const resources = data.resources
+      const storage = data.storage
+      const system = resources.system
+      const host = resources.host
+      const app = resources.app
+      const appBytes = app !== null && typeof app.memoryBytes === 'number' && app.memoryBytes > 0 ? app.memoryBytes : null
+      const memoryBytes = appBytes ?? host.memory.rss
+      const attachments = (storage.extras ?? []).find((row) => row.key === 'attachments')
+      const figures = [
+        {
+          label: t('resCpu'),
+          value: cpu(host.cpu.machinePercent),
+          note: host.cpu.machinePercent === null ? t('resCpuIdle') : t('resCpuNote', { host: cpu(host.cpu.intervalPercent), cores: exact(host.cpu.cores) }),
+        },
+        {
+          label: t('resMemory'),
+          value: bytes(memoryBytes),
+          note:
+            appBytes === null
+              ? t('resMemoryNoteHost')
+              : t('resMemoryNote', {
+                  ratio: percent(system.totalBytes > 0 ? memoryBytes / system.totalBytes : 0),
+                  processes: exact(app.processes),
+                }),
+        },
+        {
+          label: t('resSystem'),
+          value: bytes(system.usedBytes),
+          note: t('resSystemNote', { total: bytes(system.totalBytes), free: bytes(system.freeBytes) }),
+        },
+        {
+          label: t('resDisk'),
+          value: storage.at === 0 ? t('resPending') : bytes(storage.bytes),
+          note:
+            storage.at === 0
+              ? t('resScanning')
+              : attachments === undefined
+                ? t('resDiskNoteBare', { sessions: exact(storage.sessions) })
+                : t('resDiskNote', { sessions: exact(storage.sessions), attachments: bytes(attachments.bytes) }),
+        },
+      ]
+      return h(
+        'section',
+        { className: 'us-card us-resources' },
+        h(
+          'div',
+          { className: 'us-card-head' },
+          h('h2', { className: 'us-card-title' }, t('resourcesTitle')),
+          h('span', { className: 'us-card-note' }, t('resourcesNote')),
+        ),
+        h(
+          'div',
+          { className: 'us-figures us-figures-4' },
+          figures.map((figure) =>
+            h(
+              'div',
+              { className: 'us-figure', key: figure.label },
+              h('div', { className: 'us-figure-label' }, figure.label),
+              h('div', { className: 'us-figure-value' }, figure.value),
+              h('div', { className: 'us-figure-note' }, figure.note),
+            ),
+          ),
+        ),
+        resources.appError === null ? null : h('p', { className: 'us-note' }, t('resAppError', { message: resources.appError })),
+      )
+    }
+
+    /**
      * Tokens by model, busiest first. A model below 1% of the range's tokens is
      * noise in a list this long, so those rows fold into one "other" row that
      * keeps their tokens, cost and count readable.
@@ -511,6 +711,162 @@ window.__ModuleLoader__.load({
       )
     }
 
+    /**
+     * Reclaimable space: the Host's dry run, with a two-step confirmation before
+     * anything is deleted. The selection lives here; the eligibility check stays
+     * on the Host, which re-plans against a fresh scan before removing a file.
+     */
+    function Cleanup(props) {
+      const { t, data, onApplied } = props
+      const cleanup = data.cleanup
+      const candidates = Array.isArray(cleanup.candidates) ? cleanup.candidates : []
+      const [selected, setSelected] = useState({})
+      const [confirming, setConfirming] = useState(false)
+      const [busy, setBusy] = useState(false)
+      const [notice, setNotice] = useState(null)
+
+      // A row that disappeared from a newer plan cannot stay selected.
+      const chosen = candidates.filter((candidate) => selected[candidate.id] === true)
+      const chosenBytes = chosen.reduce((sum, candidate) => sum + candidate.bytes, 0)
+      const allChosen = candidates.length > 0 && chosen.length === candidates.length
+
+      const toggle = (id) =>
+        setSelected((current) => {
+          const next = { ...current }
+          if (next[id] === true) delete next[id]
+          else next[id] = true
+          return next
+        })
+      const toggleAll = () => setSelected(allChosen ? {} : Object.fromEntries(candidates.map((candidate) => [candidate.id, true])))
+
+      async function apply() {
+        setBusy(true)
+        setNotice(null)
+        try {
+          const body = await postJson(ROUTE_CLEANUP, {
+            ids: chosen.map((candidate) => candidate.id),
+            days: cleanup.days,
+            confirm: true,
+          })
+          setSelected({})
+          setConfirming(false)
+          const failed = Array.isArray(body.failed) ? body.failed.length : 0
+          setNotice({
+            text: t('cleanupDone', { count: exact(body.deleted?.length ?? 0), size: bytes(body.freedBytes ?? 0) }),
+            failed: failed === 0 ? null : t('cleanupFailedCount', { count: exact(failed) }),
+          })
+          if (typeof onApplied === 'function') onApplied(body)
+        } catch (error) {
+          setNotice({ text: t('cleanupError', { message: String(error?.message ?? error) }), failed: null })
+          if (typeof onApplied === 'function') onApplied(error?.body ?? null)
+        } finally {
+          setBusy(false)
+        }
+      }
+
+      const head = h(
+        'div',
+        { className: 'us-card-head' },
+        h('h2', { className: 'us-card-title' }, t('cleanupTitle')),
+        h('span', { className: 'us-card-note' }, t('cleanupNote', { days: exact(cleanup.days) })),
+      )
+
+      if (!cleanup.ready) {
+        return h('section', { className: 'us-card us-cleanup' }, head, h('p', { className: 'us-state' }, cleanup.error ?? t('cleanupPending')))
+      }
+
+      const summary =
+        cleanup.total.count === 0
+          ? h('p', { className: 'us-note' }, t('cleanupEmpty'))
+          : h(
+              'div',
+              { className: 'us-clean-summary' },
+              h('span', { className: 'us-clean-count' }, t('cleanupSummary', { count: exact(cleanup.total.count) })),
+              h('span', { className: 'us-clean-bytes' }, t('cleanupBytes', { size: bytes(cleanup.total.bytes) })),
+            )
+
+      return h(
+        'section',
+        { className: 'us-card us-cleanup' },
+        head,
+        summary,
+        candidates.length === 0
+          ? null
+          : h(
+              'div',
+              { className: 'us-rows us-clean-rows' },
+              h(
+                'div',
+                { className: 'us-row us-clean-row us-row-head' },
+                h('input', {
+                  type: 'checkbox',
+                  className: 'us-check',
+                  checked: allChosen,
+                  onChange: toggleAll,
+                  'aria-label': t('cleanupSelectAll'),
+                  disabled: busy,
+                }),
+                h('span', null, t('cleanupColSession')),
+                h('span', { className: 'us-num' }, t('cleanupColSize')),
+                h('span', { className: 'us-num' }, t('cleanupColWrite')),
+              ),
+              candidates.map((candidate) =>
+                h(
+                  'label',
+                  { className: 'us-row us-clean-row', key: candidate.id, title: candidate.id },
+                  h('input', {
+                    type: 'checkbox',
+                    className: 'us-check',
+                    checked: selected[candidate.id] === true,
+                    onChange: () => toggle(candidate.id),
+                    disabled: busy,
+                    'aria-label': candidate.title || t('untitled'),
+                  }),
+                  h('span', { className: 'us-trunc' }, candidate.title || t('untitled')),
+                  h('span', { className: 'us-num us-muted' }, bytes(candidate.bytes)),
+                  h('span', { className: 'us-num us-muted' }, date(candidate.lastWrite)),
+                ),
+              ),
+            ),
+        cleanup.more > 0 ? h('p', { className: 'us-note' }, t('cleanupMore', { count: exact(cleanup.more) })) : null,
+        confirming
+          ? h(
+              'div',
+              { className: 'us-confirm', role: 'group', 'aria-label': t('cleanupConfirmTitle') },
+              h('p', { className: 'us-confirm-text' }, t('cleanupConfirmBody', { count: exact(chosen.length), size: bytes(chosenBytes) })),
+              h(
+                'div',
+                { className: 'us-confirm-actions' },
+                h('button', { type: 'button', className: 'us-button', onClick: () => setConfirming(false), disabled: busy }, t('cleanupCancel')),
+                h('button', { type: 'button', className: 'us-button us-danger', onClick: apply, disabled: busy }, busy ? t('cleanupDeleting') : t('cleanupConfirm')),
+              ),
+            )
+          : h(
+              'div',
+              { className: 'us-clean-bar' },
+              h(
+                'p',
+                { className: 'us-note' },
+                cleanup.skipped.recent > 0 ? t('cleanupSkipped', { count: exact(cleanup.skipped.recent) }) : t('cleanupHint'),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'us-button us-danger',
+                  disabled: chosen.length === 0 || busy,
+                  onClick: () => setConfirming(true),
+                },
+                chosen.length === 0 ? t('cleanupDeleteEmpty') : t('cleanupDelete', { count: exact(chosen.length) }),
+              ),
+            ),
+        notice === null
+          ? null
+          : h('p', { className: 'us-note us-clean-notice', role: 'status' }, notice.text, notice.failed === null ? '' : ' ' + notice.failed),
+        cleanup.error === null ? null : h('p', { className: 'us-note' }, cleanup.error),
+      )
+    }
+
     // ── page ───────────────────────────────────────────────────────────────
 
     function UsageStatsPage({ t }) {
@@ -545,6 +901,18 @@ window.__ModuleLoader__.load({
         }
       }, [days, attempt])
 
+      // A delete response already carries the re-measured sections, so the panel
+      // does not have to wait a poll to redraw them.
+      const applied = (body) => {
+        if (body === null || typeof body !== 'object') return
+        if (body.storage === undefined && body.cleanup === undefined) return
+        setData((current) =>
+          current === null
+            ? current
+            : { ...current, storage: body.storage ?? current.storage, cleanup: body.cleanup ?? current.cleanup },
+        )
+      }
+
       const scanning = data !== null && data.scan.state === 'scanning'
       const rangeLabel = t(RANGE_LABEL[days])
 
@@ -559,20 +927,31 @@ window.__ModuleLoader__.load({
                 h('p', { className: 'us-state-title' }, t('loadFailed', { message: error })),
                 h('button', { type: 'button', className: 'us-button', onClick: () => setAttempt(attempt + 1) }, t('retry')),
               )
-      } else if (!Array.isArray(data.timeline)) {
+      } else if (!Array.isArray(data.timeline) || data.resources === undefined || data.cleanup === undefined) {
         // A browser refresh can outrun a Host restart; say so instead of crashing.
         body = h('p', { className: 'us-state' }, t('staleHost'))
-      } else if (data.totals.tokens.total === 0 && data.totals.requests === 0) {
-        body = scanning
-          ? h('p', { className: 'us-state' }, t('scanningShort'))
-          : h(
-              'div',
-              { className: 'us-state' },
-              h('p', { className: 'us-state-title' }, t('emptyTitle')),
-              h('p', { className: 'us-state-body' }, t('emptyBody')),
-            )
       } else {
-        body = h(React.Fragment, null, h(Overview, { t, data, rangeLabel }), h(Models, { t, data }), h(Sessions, { t, data }))
+        // A profile with no token usage still has resources and disk figures:
+        // only the token cards degrade to the empty state.
+        const emptyUsage = data.totals.tokens.total === 0 && data.totals.requests === 0
+        body = h(
+          React.Fragment,
+          null,
+          emptyUsage
+            ? scanning
+              ? h('p', { className: 'us-state' }, t('scanningShort'))
+              : h(
+                  'div',
+                  { className: 'us-state' },
+                  h('p', { className: 'us-state-title' }, t('emptyTitle')),
+                  h('p', { className: 'us-state-body' }, t('emptyBody')),
+                )
+            : h(Overview, { t, data, rangeLabel }),
+          h(Resources, { t, data }),
+          emptyUsage ? null : h(Models, { t, data }),
+          emptyUsage ? null : h(Sessions, { t, data }),
+          h(Cleanup, { t, data, onApplied: applied }),
+        )
       }
 
       return h(
@@ -619,11 +998,13 @@ window.__ModuleLoader__.load({
 .us-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,480px);gap:clamp(24px,4vw,56px);align-items:center}
 .us-overview-chart{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
 .us-figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px;align-content:center}
+.us-figures-4{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 18px}
 .us-figure{min-width:0}
 .us-figure-label{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px}
 .us-figure-value{margin-top:2px;font-size:26px;font-weight:600;line-height:34px;letter-spacing:-.01em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .us-figure-value.is-name{font-size:16px;line-height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .us-figure-note{margin-top:2px;color:var(--dsw-alias-label-caption);font-size:11px;line-height:17px;word-break:keep-all}
+.us-resources .us-figure-value{font-size:22px;line-height:30px}
 .us-heat-scroll{max-width:100%;overflow-x:auto;padding-bottom:2px}
 .us-heat{display:grid;justify-content:center;width:max-content;margin:0 auto}
 .us-heat-month{color:var(--dsw-alias-label-caption);font-size:11px;line-height:16px;white-space:nowrap;pointer-events:none}
@@ -640,6 +1021,16 @@ window.__ModuleLoader__.load({
 .us-row{display:grid;grid-template-columns:minmax(0,1fr) 84px 84px 56px;align-items:center;gap:12px;padding:7px 0;border-top:.5px solid var(--dsw-alias-border-l2);font-size:13px;line-height:20px}
 .us-row-head{padding:0 0 6px;border-top:0;color:var(--dsw-alias-label-caption);font-size:11px;line-height:16px}
 .us-sessions .us-row{grid-template-columns:minmax(0,1fr) 84px 84px 128px}
+.us-clean-rows{max-height:300px;overflow:auto;scrollbar-gutter:stable}
+.us-clean-row{grid-template-columns:16px minmax(0,1fr) 84px 96px;cursor:pointer}
+.us-clean-row.us-row-head{cursor:default}
+.us-check{width:14px;height:14px;margin:0;accent-color:var(--dsw-alias-state-business-primary);cursor:pointer}
+.us-check:disabled{cursor:default}
+.us-clean-summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-bottom:10px}
+.us-clean-count{font-size:15px;font-weight:600;line-height:24px;font-variant-numeric:tabular-nums}
+.us-clean-bytes{color:var(--dsw-alias-label-secondary);font-size:13px;font-variant-numeric:tabular-nums}
+.us-clean-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.us-clean-bar .us-note{margin:0;max-width:60ch}
 .us-name{display:flex;align-items:center;gap:6px;min-width:0}
 .us-trunc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .us-provider{margin-left:6px;color:var(--dsw-alias-label-caption);font-size:11px;font-style:normal;white-space:nowrap}
@@ -648,15 +1039,22 @@ window.__ModuleLoader__.load({
 .us-live{display:inline-block;flex:none;width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-state-business-primary)}
 .us-scroll-body{max-height:340px;overflow:auto;scrollbar-gutter:stable}
 .us-note{margin:10px 0 0;color:var(--dsw-alias-label-caption);font-size:11px;line-height:17px}
+.us-clean-notice{color:var(--dsw-alias-label-secondary)}
 .us-state{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:0;padding:28px 0;color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:20px}
 .us-state-title{margin:0;color:var(--dsw-alias-label-secondary);font-size:14px;font-weight:600;line-height:22px}
 .us-state-body{margin:0;max-width:460px}
 .us-button{height:28px;padding:0 12px;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;line-height:18px;white-space:nowrap;cursor:pointer;transition:background .15s}
 .us-button:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.us-button:disabled{opacity:.5;cursor:default}
+.us-danger{color:var(--dsw-alias-state-error-primary,#c0392b);border-color:color-mix(in srgb,var(--dsw-alias-state-error-primary,#c0392b) 45%,transparent)}
+.us-danger:hover:not(:disabled){background:color-mix(in srgb,var(--dsw-alias-state-error-primary,#c0392b) 10%,transparent)}
+.us-confirm{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:12px 14px;border-radius:var(--dsw-radius-sm);background:color-mix(in srgb,var(--dsw-alias-state-error-primary,#c0392b) 8%,transparent);border:.5px solid color-mix(in srgb,var(--dsw-alias-state-error-primary,#c0392b) 35%,transparent)}
+.us-confirm-text{margin:0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-primary);max-width:62ch}
+.us-confirm-actions{display:flex;align-items:center;gap:8px}
 .us-foot{margin-top:18px;color:var(--dsw-alias-label-caption);font-size:11px;line-height:17px}
 .us-page :focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
-@media (width<=900px){.us-overview{grid-template-columns:minmax(0,1fr);gap:20px}.us-figures{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (width<=700px){.us-content{padding-bottom:32px}.us-figure-value{font-size:22px;line-height:28px}.us-figures{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (width<=900px){.us-overview{grid-template-columns:minmax(0,1fr);gap:20px}.us-figures{grid-template-columns:repeat(3,minmax(0,1fr))}.us-figures-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (width<=700px){.us-content{padding-bottom:32px}.us-figure-value{font-size:22px;line-height:28px}.us-figures{grid-template-columns:repeat(2,minmax(0,1fr))}.us-clean-row{grid-template-columns:16px minmax(0,1fr) 72px 84px}}
 `
 
     // ── plugin ─────────────────────────────────────────────────────────────
