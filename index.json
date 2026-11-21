@@ -5,8 +5,8 @@
     "zh": "stuPETER12138 的 DSH 插件集"
   },
   "description": {
-    "en": "Personal DeepSeek Harness web plugins: notifications, session sharing, sticky notes, and usage statistics.",
-    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、会话分享、便签墙与用量统计。"
+    "en": "Personal DeepSeek Harness web plugins: notifications, session sharing, sticky notes, usage statistics, long-term memory, and controller/voice control.",
+    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、会话分享、便签墙、用量统计、长期记忆与手柄/语音控制。"
   },
   "metadata": {
     "categories": {
@@ -63,11 +63,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1794842055,
+          "publishTimestamp": 1795240230,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
+            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
             "path": "dsh-completion-notify"
           }
         }
@@ -109,11 +109,11 @@
       "versions": [
         {
           "version": "0.2.1",
-          "publishTimestamp": 1794842055,
+          "publishTimestamp": 1795240230,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
+            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
             "path": "dsh-session-share"
           }
         }
@@ -126,8 +126,8 @@
         "zh": "便签墙 Sticky Wall"
       },
       "description": {
-        "en": "A sticky-note wall in the left sidebar: capture an idea the moment it arrives, pin the important ones, and find them again by search.",
-        "zh": "左侧栏里的便签墙：灵感来的一瞬间就能记下，重要的置顶，以后用搜索找回。"
+        "en": "A sticky-note wall and a session bookmark index in the left sidebar: capture an idea, pin what matters, and bookmark selected chat text by session. Open a bookmark to expand collapsed process layers, jump back to its exact words, and mark them clearly; archiving a session removes its bookmarks.",
+        "zh": "左侧栏里的便签墙：灵感来的一瞬间就能记下，重要的置顶，以后用搜索找回；在会话里选中文字还能收藏成书签，按会话索引，点书签会展开折叠过程、跳回原文字并醒目标出，会话归档后自动消失。"
       },
       "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlN0aWNreSBXYWxsIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGFwZXIiIHgxPSIxMCIgeTE9IjYiIHgyPSI1NCIgeTI9IjU4IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0Y3RDc3NCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNFOUI5NDkiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImZvbGQiIHgxPSI0MCIgeTE9IjQ0IiB4Mj0iNTYiIHkyPSI1OCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNEOEE2MkYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjQzA4RjFGIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cGF0aCBkPSJNMTQgN2gzMGE5IDkgMCAwIDEgOSA5djIyLjVhOSA5IDAgMCAxLTIuNjM2IDYuMzY0bC04LjUgOC41QTkgOSAwIDAgMSAzNS41IDU2SDE0YTcgNyAwIDAgMS03LTdWMTRhNyA3IDAgMCAxIDctN1oiIGZpbGw9InVybCgjcGFwZXIpIi8+CiAgPHBhdGggZD0iTTQ1LjUgNTQuNVY0NmE3IDcgMCAwIDEgNy03aDguNGE5IDkgMCAwIDEtMS45IDMuMmwtOC4zIDguM2E5IDkgMCAwIDEtNS4yIDRaIiBmaWxsPSJ1cmwoI2ZvbGQpIi8+CiAgPGcgc3Ryb2tlPSIjOEE2NDEwIiBzdHJva2Utd2lkdGg9IjMuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjg1Ij4KICAgIDxwYXRoIGQ9Ik0xOCAyMWgyMCIvPgogICAgPHBhdGggZD0iTTE4IDI5aDI0Ii8+CiAgICA8cGF0aCBkPSJNMTggMzdoMTUiLz4KICA8L2c+Cjwvc3ZnPgo=",
       "author": "stuPETER12138",
@@ -150,13 +150,57 @@
       },
       "versions": [
         {
-          "version": "1.2.0",
-          "publishTimestamp": 1794842055,
+          "version": "1.4.4",
+          "publishTimestamp": 1795240230,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
+            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
             "path": "dsh-sticky-wall"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@local/dsh-gamepad-voice",
+      "title": {
+        "en": "Controller & voice",
+        "zh": "手柄与语音"
+      },
+      "description": {
+        "en": "Drive DSH from an Xbox One controller and replace typing with local speech. The left-sidebar page labels every action with its Xbox One button: the D-pad switches sessions and panels, A sends the draft, B stops the reply, X starts a new session, holding LB for about half a second switches where a transcript goes, RB cycles the recognition language, View returns to the conversation, and Menu opens this page; while a controller is connected the same hints appear in a bar at the lower-left. Holding Y records speech that is transcribed into the current draft. Audio is transcribed on this machine by the Voice input plugin's SenseVoice service and is never uploaded; the plugin stores only its settings in this browser. Speech requires the Voice input plugin (it provides the transcription service); the page offers working links to open Plugins or prepare its model, and a window blur, controller disconnect, or Escape ends recording.",
+        "zh": "用 Xbox One 手柄操作 DSH，用本机语音转写代替打字。左侧栏页面按 Xbox One 键位标注每个动作：十字键切换会话与面板，A 发送草稿，B 停止回复，X 新建会话，按住 LB 约半秒切换转写去向，RB 切换识别语言，View 返回对话，Menu 打开本页；连接手柄时窗口左下角还会显示同样的按键提示条。按住 Y 说话，松开后转写并进入当前草稿。录音由「语音输入」插件的 SenseVoice 在本机转写，不会上传；插件只在这个浏览器里保存设置。语音功能需要启用「语音输入」插件（转写服务由它提供），页面会给出打开插件页或准备模型的入口；窗口失焦、手柄断开或按 Esc 会结束录音。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHZpZXdCb3g9IjAgMCAzNiAzNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3YtYm9keSIgeDE9IjkiIHkxPSIxMiIgeDI9IjI5IiB5Mj0iMjgiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzY3QzdGRSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMzRjc3RDgiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0xMi42IDEyLjZoMTAuOGMyLjIgMCA0LjEgMS41IDQuNiAzLjZsMS4zIDUuMmMuNCAxLjgtMSAzLjQtMi44IDMuMi0xLjQtLjItMi42LTEuMS0zLTIuNGwtLjQtMS4yYy0uMy0uOS0xLjEtMS41LTItMS41aC02LjJjLS45IDAtMS43LjYtMiAxLjVsLS40IDEuMmMtLjQgMS4zLTEuNiAyLjItMyAyLjQtMS44LjItMy4yLTEuNC0yLjgtMy4ybDEuMy01LjJjLjUtMi4xIDIuNC0zLjYgNC42LTMuNloiIGZpbGw9InVybCgjZ3YtYm9keSkiLz4KICA8cGF0aCBkPSJNMTEuNiAxNy4xdjMuNk05LjggMTguOWgzLjYiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjIyLjkiIGN5PSIxNy40IiByPSIxLjQ1IiBmaWxsPSIjRkZGRkZGIi8+CiAgPGNpcmNsZSBjeD0iMjUuMyIgY3k9IjE5LjgiIHI9IjEuNDUiIGZpbGw9IiNGRkZGRkYiLz4KICA8cGF0aCBkPSJNMjYuMSA2LjljMSAuOSAxLjYgMi4yIDEuNiAzLjYiIHN0cm9rZT0idXJsKCNndi1ib2R5KSIgc3Ryb2tlLXdpZHRoPSIxLjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOSA1LjdjMS41IDEuMyAyLjQgMy4yIDIuNCA1LjMiIHN0cm9rZT0idXJsKCNndi1ib2R5KSIgc3Ryb2tlLXdpZHRoPSIxLjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-gamepad-voice",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-gamepad-voice"
+      },
+      "metadata": {
+        "category": "interface",
+        "keywords": [
+          "gamepad",
+          "controller",
+          "voice",
+          "dictation",
+          "speech",
+          "sidebar",
+          "手柄",
+          "语音输入",
+          "语音转写"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1795240230,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "path": "dsh-gamepad-voice"
           }
         }
       ]
@@ -164,12 +208,12 @@
     {
       "name": "@local/dsh-usage-stats",
       "title": {
-        "en": "Usage Stats",
-        "zh": "用量统计 Usage Stats"
+        "en": "Usage & Resources",
+        "zh": "用量与资源 Usage & Resources"
       },
       "description": {
-        "en": "Token usage and estimated cost computed from this machine's real session logs.",
-        "zh": "用本机真实会话日志统计 Token 消耗并估算成本。"
+        "en": "Token usage and cost, DSH's CPU, memory and disk footprint, and cleanup of archived session logs.",
+        "zh": "统计本机 Token 消耗与成本、DSH 的 CPU / 内存 / 磁盘占用，并清理已归档的旧会话日志。"
       },
       "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0idXMtYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMUY2RkVCIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzEyM0E3QSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0idXMtYmFyIiB4MT0iMCIgeTE9IjEiIHgyPSIwIiB5Mj0iMCI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzhGRTNDMCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNFOEZCRjIiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9IjIiIHk9IjIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcng9IjE1IiBmaWxsPSJ1cmwoI3VzLWJnKSIvPgogIDxwYXRoIGQ9Ik0xNCA0NmgzNiIgc3Ryb2tlPSIjQkZEOEZGIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjU1Ii8+CiAgPHJlY3QgeD0iMTUuNSIgeT0iMzIiIHdpZHRoPSI3IiBoZWlnaHQ9IjEzIiByeD0iMiIgZmlsbD0idXJsKCN1cy1iYXIpIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPHJlY3QgeD0iMjYiIHk9IjI1IiB3aWR0aD0iNyIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9InVybCgjdXMtYmFyKSIgb3BhY2l0eT0iMC45Ii8+CiAgPHJlY3QgeD0iMzYuNSIgeT0iMTkiIHdpZHRoPSI3IiBoZWlnaHQ9IjI2IiByeD0iMiIgZmlsbD0idXJsKCN1cy1iYXIpIi8+CiAgPHBhdGggZD0iTTE1IDI3LjUgMjQgMjIuNSAzMiAyNSA0NyAxMy41IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkQxNjYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSI0NyIgY3k9IjEzLjUiIHI9IjMiIGZpbGw9IiNGRkQxNjYiLz4KICA8cGF0aCBkPSJNMTQuNSA1MC41YzguNS0yLjYgMjYtMi42IDM1IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0JGRDhGRiIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC40Ii8+Cjwvc3ZnPgo=",
       "author": "stuPETER12138",
@@ -186,19 +230,74 @@
           "cost",
           "statistics",
           "dashboard",
+          "resources",
+          "cpu",
+          "memory",
+          "disk",
+          "cleanup",
           "用量",
-          "成本"
+          "成本",
+          "资源",
+          "内存",
+          "磁盘",
+          "清理"
         ]
       },
       "versions": [
         {
-          "version": "2.3.0",
-          "publishTimestamp": 1794842055,
+          "version": "3.0.0",
+          "publishTimestamp": 1795240230,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "84496304938f6aa4c2dae71a1f341ddef02e2855",
+            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
             "path": "dsh-usage-stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@local/dsh-agent-memory",
+      "title": {
+        "en": "Long-term memory",
+        "zh": "长期记忆"
+      },
+      "description": {
+        "en": "Edit semantic, episodic, and procedural memory separately from the left sidebar. Saved text is added to every turn, so answers follow your habits and preferences. Memory lives in three markdown files on this machine that you can read, edit, or clear at any time.",
+        "zh": "在左侧栏分别编辑语义记忆、情节记忆和过程记忆；保存后，每一轮对话都会带上这些内容，回答更贴合你平时的做法与偏好。记忆以三个 markdown 文件存在本机，随时能看、能改、能清空。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkxvbmctdGVybSBtZW1vcnkiPgogIDxwYXRoIGQ9Ik0xOCA1LjQgMzAuNiAxMC41IDE4IDE1LjYgNS40IDEwLjV6IiBmaWxsPSIjNEY1QUQ5Ii8+CiAgPHBhdGggZD0iTTUuNCAxNy4xIDE4IDIyLjIgMzAuNiAxNy4xIiBmaWxsPSJub25lIiBzdHJva2U9IiM3Qjg1RUYiIHN0cm9rZS13aWR0aD0iMi44IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNS40IDIzLjQgMTggMjguNSAzMC42IDIzLjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0FFQjNGNiIgc3Ryb2tlLXdpZHRoPSIyLjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K",
+      "author": "stuPETER12138",
+      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-agent-memory",
+      "repository": {
+        "url": "https://github.com/stuPETER12138/dsh-plugins",
+        "directory": "dsh-agent-memory"
+      },
+      "metadata": {
+        "category": "assistant",
+        "keywords": [
+          "memory",
+          "long-term-memory",
+          "personalization",
+          "system-prompt",
+          "sidebar",
+          "semantic",
+          "episodic",
+          "procedural",
+          "记忆",
+          "长期记忆",
+          "个性化"
+        ]
+      },
+      "versions": [
+        {
+          "version": "2.0.0",
+          "publishTimestamp": 1795240230,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/stuPETER12138/dsh-plugins",
+            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "path": "dsh-agent-memory"
           }
         }
       ]
