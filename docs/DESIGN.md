@@ -19,15 +19,12 @@
 - **dsh-completion-notify**：设置行沿用宿主 General 行的字号与间距；测试按钮收为 26px 高、8px 圆角；文案补上"出错"状态，去掉只对 Windows 成立的措辞。
 - **dsh-sticky-wall**：删掉副标题与计数药丸；便签用 10–15% 纸色混色 + 发丝边，取消顶部 3px 色条、悬停位移与阴影；色板从圆形点改成方形纸片；空状态去掉大图标；toast 改用宿主 toast 令牌。
 - **dsh-usage-stats**：2.0.0 把面板收成四块内容（汇总数字 / 时间视图 / 模型成本 / 会话用量），2.1.0 把时间视图换成一格一天的日历热力图，并与六个数字并排成一张概览卡（左日历、右数字；窄屏上下堆叠，卡内不设标题）：圆角方块按列数取 14 / 20 / 30px（列越多越小，一年也放得进卡片）、间距 3–4px、四档单色阶（强调色 24% / 45% / 70% / 100% 混卡片底色，按当天用量的排名分位取档），没有悬停浮层、均值线、峰值标注、环形图、环比药丸、骨架屏和供应商选择器；悬停明细交给浏览器原生 `title`。数字层级只靠字号与留白区分，正在运行的会话只留一个 5px 平点。
-- **dsh-session-share**：角色标签从蓝/绿药丸改成 11px 文字；图片计数去掉 emoji，改成本地化文案；按钮与格式切换统一到 4/8px 圆角；当前格式不再用阴影描边。
 
 ## 有意保留
 
 以下命中是复查后确认的"有理由的选择"，不是待修的 slop：
 
 - **圆形**：开关滑块、spinner、状态点。圆形是这些控件的功能形状，且没有 halo、脉冲或发光。
-- **`.sss-link:hover` 下划线**：这是文字链接，不是装饰性强调。
-- **LaTeX 的 `\overline` 与 `font-family:monospace`**：属于公式排版，不是 UI 里的 kicker / 终端 cosplay。
 - **README 许可证行的 `©`**：扫描器的 emoji 规则会把它当成 emoji，实际是版权符号。
 - **dsh-sticky-wall 会话选中文字的 999px 浮动操作条**：它占据宿主引用按钮原来的插入位置，必须沿用同一浮层的药丸形状（`--dsw-alias-button-floating-*`、`--dsw-elevation-panel`）才能和宿主动作条连成一体；便签墙 / 书签页面内部仍只用 4 / 8 / 12px 的小圆角。
 - **dsh-sticky-wall 书签跳转的黄色定位框**：只在跳转后的 12 秒内出现，不附带文字、徽标或按钮，只框住选中文字。浅色模式用 `#b97b00` 琥珀边框 + 18% 浅黄底，深色模式切到 `#ffd54f` 亮黄边框 + 22% 浅黄底；它不是常规表面，不参与便签墙的主题混色。
@@ -35,5 +32,5 @@
 ## 验证
 
 - 在隔离的 `DSH_HOME` 与临时 profile 里用 `link:` 安装全部插件，经本机 DSH Web + 无头 Chrome 截图核对浅色与深色下的实际渲染。本轮截图保存在 `.verify-design/`（被 `.gitignore` 忽略，仅本机复查用）。
-- `node scripts/verify-repo.mjs`；`dsh-session-share` 的 `tools/test-*.mjs` 四个测试。
+- `node scripts/verify-repo.mjs`；`dsh-usage-stats/test/host.test.mjs` 与 `dsh-gamepad-voice/tools/test-client.mjs`。
 - 设计扫描使用 kill-ai-slop 的 `scan.mjs`（分析时临时放在仓库外，不随仓库分发）。修完后剩余命中应只有本文"有意保留"列出的类别。

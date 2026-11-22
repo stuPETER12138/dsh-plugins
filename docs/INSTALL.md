@@ -1,6 +1,6 @@
 # 安装、升级与卸载
 
-本仓库的 4 个插件都是独立的 DSH「组合包（bundle）」，每个插件单独安装、单独启用、单独卸载。本文以当前验证过的环境为准：
+本仓库的插件都是独立的 DSH「组合包（bundle）」，每个插件单独安装、单独启用、单独卸载。本文以当前验证过的环境为准：
 
 | 项目 | 值 |
 | --- | --- |
@@ -73,9 +73,10 @@ DSH 的**插件索引**是一份 JSON 清单，列出可安装的组合包及其
 
    ```text
    D:\github\dsh-plugins\dsh-completion-notify
-   D:\github\dsh-plugins\dsh-session-share
    D:\github\dsh-plugins\dsh-sticky-wall
+   D:\github\dsh-plugins\dsh-gamepad-voice
    D:\github\dsh-plugins\dsh-usage-stats
+   D:\github\dsh-plugins\dsh-agent-memory
    ```
 
 3. 打开 DSH Desktop → 左侧栏 **插件** → 右上角 **添加插件**。
@@ -125,9 +126,10 @@ dsh plugin --profile myprofile add "link:D:\github\dsh-plugins\dsh-sticky-wall"
 1. **插件页 → 已安装插件**：能看到对应组合包卡片，行状态为运行中（开关为开）。若显示异常，卡片/详情页会给出原因。
 2. **对应入口出现**：
    - `dsh-completion-notify`：设置 → 通用 → 通知行。
-   - `dsh-session-share`：任意会话标题下方的「分享」页签。
-   - `dsh-sticky-wall`：左侧栏「便签墙」。
-   - `dsh-usage-stats`：左侧栏「用量统计」。
+   - `dsh-sticky-wall`：左侧栏「便签墙」；会话里选中文字时出现「收藏」浮条。
+   - `dsh-gamepad-voice`：左侧栏「手柄与语音」。
+   - `dsh-usage-stats`：左侧栏「用量与资源」。
+   - `dsh-agent-memory`：左侧栏「记忆」，以及对话里的 `/memory` 命令。
 3. 功能本身正常使用（每个插件的 README 有「验证生效」小节）。
 
 仓库里还有一份隔离环境的自动化验证记录：[docs/VERIFICATION.md](VERIFICATION.md)。
@@ -163,9 +165,10 @@ dsh plugin --profile <profile> remove @local/dsh-xxx
 | 插件 | 数据位置 |
 | --- | --- |
 | `dsh-completion-notify` | 浏览器 `localStorage` 键 `dsh.completion-notify.v1`（通知开关 `enabled`；「发送测试通知」不落盘） |
-| `dsh-session-share` | 浏览器 `localStorage` 键 `dsh.session-share.prefs.v1`（导出偏好） |
-| `dsh-sticky-wall` | 浏览器 `localStorage` 键 `dsh.sticky-wall.notes.v1`（全部便签）与 `dsh.sticky-wall.prefs.v1`（上次选择的纸色） |
-| `dsh-usage-stats` | 缓存文件 `$DSH_HOME/cache/dsh-usage-stats/summaries.json`；插件配置在 profile 的 `cordis.patch.yml` 里 `usage-stats` 行 |
+| `dsh-sticky-wall` | 浏览器 `localStorage` 键 `dsh.sticky-wall.notes.v1`（全部便签）、`dsh.sticky-wall.bookmarks.v1`（会话书签）与 `dsh.sticky-wall.prefs.v1`（上次选择的纸色与页签） |
+| `dsh-gamepad-voice` | 浏览器 `localStorage` 键 `dsh.gamepad-voice.settings.v1`（按键映射、提示条开关与语音选项）；录音不落盘 |
+| `dsh-usage-stats` | 缓存文件 `$DSH_HOME/cache/dsh-usage-stats/summaries.json`；插件配置在 profile 的 `cordis.patch.yml` 里 `usage-stats` 行（价目、清理窗口、资源采样） |
+| `dsh-agent-memory` | 本机文件 `$DSH_HOME/agent-memory/core.md`（常驻画像）、`records.jsonl`（全部记录）与 `dismissed.json`（不再提示的配对） |
 
 浏览器数据可在 DSH 页面用开发者工具清除对应 key；缓存目录直接删除即可（下次打开面板会重建）。
 

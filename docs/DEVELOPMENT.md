@@ -1,6 +1,6 @@
 # 开发与发布
 
-本仓库每个插件都是一个自包含的 DSH 组合包（bundle package），不依赖第三方 npm 包、不需要编译（`dsh-session-share` 的浏览器产物需要一次内联构建，已在仓库中提交）。本文说明插件结构、如何本地调试、如何校验与发布。
+本仓库每个插件都是一个自包含的 DSH 组合包（bundle package），不依赖第三方 npm 包、不需要编译，`client.js` 就是源文件。本文说明插件结构、如何本地调试、如何校验与发布。
 
 ## 目录约定
 
@@ -14,7 +14,7 @@ dsh-plugins/
 │  ├─ locale/en.json|zh.json  # 插件管理页展示用的标题/描述（meta.title/meta.description）
 │  ├─ icon.svg                # 插件卡片图标
 │  ├─ README.md               # 面向用户的功能、安装、使用说明
-│  └─ src/ tools/ notes/ ...  # 可选：源码、构建脚本、单元测试（session-share 有）
+│  └─ tools/ test/ ...        # 可选：单元测试与调试脚本（usage-stats、gamepad-voice 有）
 ├─ index.json                 # 由 scripts/generate-index.mjs 生成的插件市场索引
 ├─ docs/                      # 安装、兼容性、开发、验证文档
 └─ scripts/                   # 校验、索引生成、安装验证脚本
@@ -129,21 +129,16 @@ $cli = 'D:\Software\DeepseekHarness\resources\runtime\cli\bin\dsh.cmd'
 
 数据目录与用户真实 DSH 相同（`$DSH_HOME` 默认为 `C:\Users\<你>\.dsh`）。
 
-### `dsh-session-share` 的构建步骤
+### 单元测试
 
-它的浏览器半由 `src/latex.js` + `src/export-core.js` + `src/client-shell.js` 依次内联生成到 `client.js`。改 `src/` 后必须重建：
+插件都没有构建步骤，`client.js` 就是源文件。带测试的两个插件直接跑 Node 自带的测试运行器或独立脚本：
 
 ```powershell
-cd dsh-session-share
-node tools/build-client.mjs
-node --check client.js
-node tools/test-transcript.mjs
-node tools/test-export-core.mjs
-node tools/test-latex.mjs
-node tools/test-host.mjs
+node --test dsh-usage-stats/test/host.test.mjs
+node dsh-gamepad-voice/tools/test-client.mjs
 ```
 
-其它插件没有构建步骤，`client.js` 就是源文件。
+测试都是隔离的：usage-stats 的 Host 测试自建临时 `DSH_HOME`，gamepad-voice 的脚本用假手柄、假麦克风与假 DSH 客户端服务驱动浏览器半，不读真实 `~/.dsh`。
 
 ## 仓库脚本
 
@@ -160,7 +155,8 @@ node tools/test-host.mjs
 
    ```powershell
    node scripts/verify-repo.mjs
-   cd dsh-session-share; node tools/test-transcript.mjs; node tools/test-export-core.mjs; node tools/test-host.mjs; cd ..
+   node --test dsh-usage-stats/test/host.test.mjs
+   node dsh-gamepad-voice/tools/test-client.mjs
    ```
 
 3. 提交代码（**先提交插件代码**）：

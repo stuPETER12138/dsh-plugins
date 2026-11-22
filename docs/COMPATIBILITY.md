@@ -7,12 +7,10 @@
 | 插件 | 版本 | DSH Desktop 0.2.2-rc.1 / Windows 11 | 类型 |
 | --- | --- | --- | --- |
 | `dsh-completion-notify` | 1.0.0 | ✅ 通过 | Host + 浏览器 |
-| `dsh-session-share` | 0.2.0 | ✅ 通过 | Host + 浏览器 |
 | `dsh-sticky-wall` | 1.2.0 | ✅ 通过 | 纯浏览器 |
 | `dsh-usage-stats` | 2.3.0 | ✅ 通过 | Host + 浏览器 |
 
-- 验证方式：在**隔离的临时 `DSH_HOME` + 临时 profile** 中，用 DSH 自带运行时（`resources/runtime/cli/bin/dsh.cmd`，`0.2.2-rc.1`）逐个安装 4 个插件，检查依赖安装、组合包选择、`--dump-config` 组合结果、Host 半加载、Web 服务启动以及各插件 client bundle 是否由 `/plugins` 路由提供。记录见 [VERIFICATION.md](VERIFICATION.md)。
-- `dsh-session-share` 0.2.0 新增 LaTeX 公式渲染：该版本通过 4 个单元测试套件（176 项断言）与无头 Chromium 端到端导出验证（PNG/PDF、基线对齐、跨页不拆行、无 MathML 时回退原文）；隔离 profile 的安装/加载全链路沿用 `VERIFICATION.md` 中 0.1.0 的记录（Host 半与插件清单未变，浏览器半为新增）。
+- 验证方式：在**隔离的临时 `DSH_HOME` + 临时 profile** 中，用 DSH 自带运行时（`resources/runtime/cli/bin/dsh.cmd`，`0.2.2-rc.1`）逐个安装本仓库的插件，检查依赖安装、组合包选择、`--dump-config` 组合结果、Host 半加载、Web 服务启动以及各插件 client bundle 是否由 `/plugins` 路由提供。记录见 [VERIFICATION.md](VERIFICATION.md)。
 - `dsh-sticky-wall` 1.2.0 把便签墙从等高网格改成按最短列落位的瀑布流：在隔离 profile 中安装后由无头 Edge 做交互与几何断言（列宽 / 14px 间距 / 同列紧贴 / 无重叠 / 墙高 / 缩放重排 / 新增与编辑时的重排），并与 1.1.0 的网格布局做对照；记录见 `VERIFICATION.md` 的增量记录。运行位置与插槽未变，仍是纯浏览器插件。
 - `dsh-usage-stats` 2.3.0 把「模型成本」卡改成「模型用量」：按 Token 量排序，占比改为 Token 占比，不到 1% 的模型同样折叠成「其他」。纯浏览器端改动，载荷与 Host 都不变；隔离实例复核了排序、折叠与合计。
 - `dsh-usage-stats` 2.2.0 调整三处默认值与列表口径：默认范围改为 90 天；模型成本按成本占比排序，成本不到 1% 的模型折叠成一行「其他」（悬停可看名单）；会话列表上限从 200 收到 100。载荷契约不变（Host 只改了会话上限），客户端另做排序与折叠；隔离实例复核了 33 项断言，记录见 `VERIFICATION.md` 的 2.2.0 增量。
@@ -38,8 +36,7 @@
 | 插件 | 依赖的 DSH 能力 |
 | --- | --- |
 | `dsh-completion-notify` | `session/event` 会话事件（`turn/end`、`approval/asked`）、`user-questions/request` 观察、Host→浏览器循环路由、`settings.general.item` 插槽、`dsh-client-locale`；系统通知命令（Windows PowerShell / macOS `osascript` / Linux `notify-send`） |
-| `dsh-session-share` | `sessionQuery.readSession()`、`sessionPersistence`、`attachments.readImage()`、仅回环可访问的只读 HTTP 路由、`conversation.view` 插槽、`dsh-client-locale`；浏览器 Canvas / PDF 手写生成（无第三方库）；LaTeX 公式依赖浏览器 **MathML Core**（Chromium 109+）与系统数学字体（Windows 为 Cambria Math） |
-| `dsh-sticky-wall` | 纯浏览器：`sidebar.panellist` 与 `main` 插槽、`localStorage`、`--dsw-*` 主题 token |
+| `dsh-sticky-wall` | 纯浏览器：`sidebar.panellist`、`main` 与 `conversation.chat.text-interaction` 插槽、`sessions` / `workspaces` / `uiWorkspace` / `uiConversation` 客户端服务、`localStorage`、`--dsw-*` 主题 token |
 | `dsh-usage-stats` | `sessionPersistence.list()/open()`、`sessionQuery.readSession()`、内存 `sessions` 服务、仅回环可访问的 HTTP 路由、`sidebar.panellist` 与 `main` 插槽、`dsh-client-locale` |
 
 ## 平台说明
@@ -47,8 +44,6 @@
 - **Windows 11**：全部功能已实测。
 - **macOS / Linux**：代码里为系统通知准备了 `osascript` / `notify-send` 分支，但**没有在真实 macOS/Linux 上跑过**。DSH Desktop 本身的多平台行为也可能不同，使用前请自行验证。
 - **外部浏览器（`dsh web`）**：理论上可用（插件只依赖 Web 平台），但字体度量、Canvas 渲染与下载行为可能与内嵌 Chromium 有差异，未做实测。
-- **字体**：`dsh-session-share` 的公式排版使用系统数学字体（Windows 为 Cambria Math），缺失时由 Chromium 回退到其他数学字体，公式仍会显示。
-- **无头/外部浏览器**：公式渲染依赖 Chromium 的 MathML Core（Chrome 109+）；更旧的浏览器会自动回退为显示原始 TeX，导出不会失败。
 
 ## 插件市场索引兼容性
 
@@ -59,6 +54,6 @@
 ## 升级 DSH 之后
 
 1. 先看本页与 [VERIFICATION.md](VERIFICATION.md) 是否已更新到新版本。
-2. 在插件页确认 4 个插件的行状态均为运行中；若有异常，打开详情看 Host 给出的原因。
+2. 在插件页确认各插件的行状态均为运行中；若有异常，打开详情看 Host 给出的原因。
 3. 如果 DSH 更新了浏览器模块系统或插槽 API，需要按 [DEVELOPMENT.md](DEVELOPMENT.md) 升级插件代码，然后重新生成 `index.json` 并发布。
 4. 升级后如遇崩溃或界面异常，先在插件页禁用可疑插件，再定位问题。

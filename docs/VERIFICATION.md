@@ -3,7 +3,11 @@
 > **2026-11-16 更新**：`dsh-style-studio` 已从本仓库移除（插件源码、索引条目与本机安装副本均已删除）。
 > 下文 2026-11-07 的首次全链路验证与各插件增量记录中，凡涉及 `dsh-style-studio` 的内容仅作历史存档，
 > 不再对应当前仓库；该插件的三份增量验证记录（2.0.0 / 2.1.0 / 2.2.0）已随插件一并删除。
-> 当前仓库为 4 个插件，其余结论继续有效。
+>
+> **2026-11-22 更新**：`dsh-session-share` 已从本仓库移除（插件源码与索引条目均已删除）。
+> 下文首次全链路验证与各插件增量记录中，凡涉及 `dsh-session-share` 的内容仅作历史存档，
+> 不再对应当前仓库；该插件的 0.2.1 增量验证记录已随插件一并删除。
+> 当前仓库为 5 个插件（completion-notify、sticky-wall、gamepad-voice、usage-stats、agent-memory），其余结论继续有效。
 
 本文件记录本仓库插件的实测结果（2026-11-07 首次验证时仓库为 5 个插件）：每个插件都走完了「静态校验 → 安装 → 组合 → Host 启动 → client bundle 提供」
 全链路，并按发布路径（插件市场索引、GitHub 子目录 git 安装）补充了验证。
@@ -389,7 +393,6 @@ $ & dsh.cmd plugin --profile verifyhttps add '"git+https://github.com/stuPETER12
 | --- | --- | --- |
 | DSH Desktop `desktop` profile 与桌面 UI 内安装 | 未验证：约束要求不触碰真实环境，实测走 CLI 的隔离 web profile；桌面端与 web 共用同一 loader/pnpm 过程，风险低 | 需用户在真机做一次 UI 点击安装确认 |
 | completion-notify 的系统通知实际弹出 | 未端到端验证：需要真实会话完成/等待授权事件（隔离 profile 无模型凭据、无会话） | OS 通知文案/点击聚焦行为未实测；模块加载、设置页注册代码路径已验证 |
-| session-share 会话内「分享」页签交互 | 未验证：页签在活跃会话中出现，隔离 profile 未产生会话；Host 路由与 client 模块已验证 | 导出 Markdown/PNG/PDF 的真实点击流程未实测（单元测试覆盖导出核心 54 项） |
 | usage-stats 1.0.0 真实统计数字与图表 | 1.0.0 未验证：隔离 DSH_HOME 无会话日志，接口返回 0 值空态；1.1.0 的供应商用量卡片已用真实会话数据副本完成无头端到端验证（见文末增量记录） | 1.0.0 旧面板整体未在真实数据上回归；1.1.0 的供应商卡片、成本卡片与会话表渲染已实测，图表细节仍以视觉抽查为准 |
 | 市场「发现」标签页端到端安装 | 未验证：需要启用可选插件「自定义插件索引」，且 raw URL 网络抖动；已用真实 validator + 真实 git 安装等价验证 | UI 点击流程未实测；spec 本身已实测可安装 |
 | 非 Windows 平台 | 未验证（仅 Windows 11 实测） | 插件含 macOS/Linux 分支（如系统通知命令），未实测 |
@@ -411,10 +414,8 @@ pwsh -File scripts/verify-install.ps1
 pwsh -File scripts/verify-install.ps1 -DshCli 'D:\Software\DeepseekHarness\resources\runtime\cli\bin\dsh.cmd' -TempHome "$env:TEMP\dsh-verify-manual"
 
 # 3) 单元测试
-cd dsh-session-share
-node tools/test-transcript.mjs
-node tools/test-export-core.mjs
-node tools/test-host.mjs
+node --test dsh-usage-stats/test/host.test.mjs
+node dsh-gamepad-voice/tools/test-client.mjs
 
 # 4) 索引校验（需从 app.asar 抽出 @deepseek-ai/dsh-plugin-market-index 与 semver 后 import）
 #    parseMarketIndex(JSON.parse(fs.readFileSync('index.json')), '<index raw URL>')
@@ -532,63 +533,6 @@ orchestrator.log、8 张截图）与 `.verify-sticky-wall/evidence/20261110-1611
 - 便签按最短列落位，底部边缘参差是设计取舍；编辑中的卡片只在自身列内变高、不会跳列，但会推动同列下方卡片。
 - 本机 `desktop` profile 安装的插件副本已同步为本次代码（`D:\Project\dsh-normal\plugins\dsh-sticky-wall`，
   package.json 版本同为 `1.2.0`），刷新页面即可生效；未重启 DSH Desktop，未改真实 profile 配置。
-
-## 增量验证：dsh-session-share 0.2.1 格式与下载按钮移到顶部（2026-11-11）
-
-本记录针对**工作区中的未提交变更**（插件版本 `0.2.1`），不是已发布索引的一部分；
-验证对象只有 `dsh-session-share`。
-
-**改动**：`分享` 视图原来把 Markdown / 图片 / PDF 切换条与下载按钮放在面板**最底部**的 `footer`
-里，`ss-body` 高 `min(70vh,860px)`，内容稍多时这排按钮就落到视口下方，必须滚动才能换格式或导出。
-现在把它们移到标题下方、消息列表上方的 `ss-actions` 工具栏：左侧格式切换，右侧是实时状态
-（「已开始下载。共 N 页」或报错）、「复制 Markdown」（仅 Markdown 格式）和主下载按钮；
-底部 footer 与 `.ss-privacy` 段落一并移除，隐私说明并入标题下的副标题行。
-同时给 `ss-shell` 设 `box-sizing:border-box`，避免窄窗口下工具栏被容器裁掉。
-
-**方法**（全程隔离，未触碰真实 `~/.dsh` 与正在运行的 DSH Desktop）：
-
-1. 新建临时 `DSH_HOME`，用出厂 `web` 模板建临时 profile，`dsh plugin add "link:<仓库>/dsh-session-share"` 安装；
-   写入**占位** `DEEPSEEK_API_KEY`（全部为假值，只为跳过首次运行的登录引导，不联网、不复制真实密钥）；
-2. 从真实会话库**只读**挑出 3 个最小的「主会话」日志（子代理日志在侧栏不可见，会被判为空），拷进临时
-   `sessions/<工作区>/`；
-3. `dsh --profile <临时> --port 0 --no-open` 启动隔离 Web 服务，读取带 token 的地址；
-4. 无头 Edge（CDP，`--headless=new`）打开该地址，关掉引导弹窗，点侧栏第一条会话，再点「分享」页签；
-5. 断言（DOM 几何 + 行为）：
-   - 静态 6 项：`client.js` 仍是 `__ModuleLoader__` 模块、`ss-actions` 渲染位置先于 `ss-body`、
-     `ss-formats` 与 `ss-button-primary` 都在 `ss-actions` 内、`.ss-foot` 规则与标记均已消失、隐私说明在副标题里；
-   - 布局 9 项：工具栏可见、格式三键与下载按钮在工具栏内、无 `.ss-foot`/`<footer>`、隐私说明唯一、
-     工具栏底边 ≤ 正文与列表顶边、紧跟标题、列表渲染 6 条且主按钮可用；
-   - 行为 5 项：切「图片」→ 按钮变「下载图片」且无复制键；切 Markdown → 「复制 Markdown」+「下载 .md」同排；
-     切 PDF → 「下载 PDF」；点顶部主按钮真的产出 `application/pdf` Blob（154 291 字节，头 `%PDF-1.4`），
-     并在同一工具栏显示「已开始下载。 共 1 页」；
-   - 响应式 4 项：560×900 下工具栏仍可见、无横向溢出、仍在列表上方、按钮右缘 536px 未超出面板 553px 与视口 560px；
-   - 控制台 1 项：无提及 `ss-` / `session-share` 的错误；
-6. Harness 自检：对 `git archive HEAD:dsh-session-share` 的旧实现（底部 footer）跑同一套断言，必须失败。
-
-**结果**：当前实现 28/28 断言通过（静态 6 + 浏览器 22），0 失败、0 跳过；HEAD 基线 7/28（21 项失败，
-静态 5 + 布局 9 + 行为 5 + 响应式 3），证明断言确实会咬。
-
-| 视口 | 工具栏位置 | 工具栏尺寸 | 正文顶边 | 列表顶边 | 下载按钮右缘 |
-| --- | --- | --- | ---: | ---: | ---: |
-| 1440×1000 | 标题下方（head 底 152px） | 760×51px | 203px | 248px | 在面板内 |
-| 560×900 | 标题下方（head 底 146px） | 520×69px | 215px | 260px | 536px（面板 553px） |
-
-- 静态检查：`node --check client.js` 通过；单元测试仍全绿（transcript 16 / export-core 88 / latex 40 / host 32）。
-- 截图证据：1440 宽面板、导出后状态、560 宽面板、最终状态共 4 张。
-
-**证据**（临时目录，未提交，已被 `.gitignore` 的 `.verify-*/` 覆盖）：
-`.verify-share-topbar/evidence/20261111-150638-current6/`（results.json、dom-snapshots.json、browser-steps.json、
-driver.log、orchestrator.log、4 张截图）与 `.verify-share-topbar/evidence/20261111-150715-baseline2/`（基线 21 项失败）。
-
-**残余风险与说明**：
-
-- 隔离实例用的是**伪造** API Key 与**拷贝**的会话日志，只验证界面与导出链路；真实登录、真实 token 计量未覆盖。
-- 导出探测抓的是 `URL.createObjectURL` 产出的 Blob（大小、MIME、`%PDF-` 头），不落盘，因此没有验证
-  浏览器下载目录里的文件名；文件名逻辑由 export-core 单测覆盖。
-- 工具栏本身不吸顶（不 `position:sticky`）：它本来就在列表上方，会话很长时列表在 `ss-items` 内滚动，
-  工具栏始终可见。
-- 本机 `desktop` profile 安装的插件副本已同步为本次代码（`D:\Project\dsh-normal\plugins\dsh-session-share`，
-  package.json 版本同为 `0.2.1`），刷新页面即可生效；未重启 DSH Desktop，未改真实 profile 配置。
 
 ## 增量验证：dsh-usage-stats 2.3.0 模型用量（2026-11-16）
 
@@ -810,7 +754,7 @@ LB 误触直接发送、失焦/手柄断开/页面隐藏未停止录音、语音
 
 ## 结论
 
-在 DSH Desktop `0.2.2-rc.1` 上，上述插件（首次验证时为 5 个，其中 `dsh-style-studio` 已于 2026-11-16 移除）均可通过真实 CLI 安装、进入 profile 组合包、由 Host 启动加载，
-并由 `/plugins` 路由提供各自的浏览器模块；仓库静态校验、session-share 单元测试、插件市场索引
+在 DSH Desktop `0.2.2-rc.1` 上，上述插件（首次验证时为 5 个，其中 `dsh-style-studio` 已于 2026-11-16 移除、`dsh-session-share` 已于 2026-11-22 移除）均可通过真实 CLI 安装、进入 profile 组合包、由 Host 启动加载，
+并由 `/plugins` 路由提供各自的浏览器模块；仓库静态校验、插件单元测试、插件市场索引
 （真实校验器 + 已发布 raw 索引）与 GitHub 子目录 git 安装均通过。未验证项集中在**需要真实登录会话或
 桌面 UI 交互**的功能细节，不影响「可安装、可加载」的结论。
