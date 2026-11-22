@@ -5,8 +5,8 @@
     "zh": "stuPETER12138 的 DSH 插件集"
   },
   "description": {
-    "en": "Personal DeepSeek Harness web plugins: notifications, session sharing, sticky notes, usage statistics, long-term memory, and controller/voice control.",
-    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、会话分享、便签墙、用量统计、长期记忆与手柄/语音控制。"
+    "en": "Personal DeepSeek Harness web plugins: notifications, sticky notes with session bookmarks, usage statistics and resources, long-term memory, and controller/voice control.",
+    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、便签墙与会话书签、用量与资源统计、长期记忆，以及手柄/语音控制。"
   },
   "metadata": {
     "categories": {
@@ -63,58 +63,12 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1795240230,
+          "publishTimestamp": 1795340745,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
             "path": "dsh-completion-notify"
-          }
-        }
-      ]
-    },
-    {
-      "name": "@local/dsh-session-share",
-      "title": {
-        "en": "Session share",
-        "zh": "会话分享"
-      },
-      "description": {
-        "en": "Pick the messages worth sharing from the current conversation and export them as Markdown, an image, or a PDF — tables, images and LaTeX formulas included, all on this machine.",
-        "zh": "在当前会话中挑选要分享的消息，导出为 Markdown、图片或 PDF；表格、图片与 LaTeX 公式都会排版，不离开本机。"
-      },
-      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlNlc3Npb24gc2hhcmUiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJzcy1iZyIgeDE9IjgiIHkxPSI2IiB4Mj0iNTYiIHkyPSI2MCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzQjgyRjYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEVBNUE0Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHJ4PSIxNSIgZmlsbD0idXJsKCNzcy1iZykiLz4KICA8cGF0aCBkPSJNMTUgMjEuNWMwLTIuNSAyLTQuNSA0LjUtNC41aDIwYzIuNSAwIDQuNSAyIDQuNSA0LjV2MTNjMCAyLjUtMiA0LjUtNC41IDQuNUgyNy41TDIxIDQ0di01aC0xLjVjLTIuNSAwLTQuNS0yLTQuNS00LjV2LTEzWiIgZmlsbD0iI0ZGRkZGRiIgZmlsbC1vcGFjaXR5PSIwLjk2Ii8+CiAgPHBhdGggZD0iTTIyIDIzLjVoMTZNMjIgMjguNWgxM00yMiAzMy41aDkiIHN0cm9rZT0iIzFENEVEOCIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik00NS41IDM1LjV2LTcuOG0wIDAtMy40IDMuNG0zLjQtMy40IDMuNCAzLjQiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIyLjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxyZWN0IHg9IjQwLjUiIHk9IjM5LjUiIHdpZHRoPSIxMiIgaGVpZ2h0PSIyLjgiIHJ4PSIxLjQiIGZpbGw9IiNGRkZGRkYiIGZpbGwtb3BhY2l0eT0iMC45Ii8+Cjwvc3ZnPgo=",
-      "author": "stuPETER12138",
-      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-session-share",
-      "repository": {
-        "url": "https://github.com/stuPETER12138/dsh-plugins",
-        "directory": "dsh-session-share"
-      },
-      "metadata": {
-        "category": "assistant",
-        "keywords": [
-          "session",
-          "share",
-          "export",
-          "markdown",
-          "pdf",
-          "png",
-          "latex",
-          "math",
-          "导出",
-          "分享",
-          "公式"
-        ]
-      },
-      "versions": [
-        {
-          "version": "0.2.1",
-          "publishTimestamp": 1795240230,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
-            "path": "dsh-session-share"
           }
         }
       ]
@@ -151,11 +105,11 @@
       "versions": [
         {
           "version": "1.4.4",
-          "publishTimestamp": 1795240230,
+          "publishTimestamp": 1795340745,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
             "path": "dsh-sticky-wall"
           }
         }
@@ -195,11 +149,11 @@
       "versions": [
         {
           "version": "1.1.0",
-          "publishTimestamp": 1795240230,
+          "publishTimestamp": 1795340745,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
             "path": "dsh-gamepad-voice"
           }
         }
@@ -246,11 +200,11 @@
       "versions": [
         {
           "version": "3.0.0",
-          "publishTimestamp": 1795240230,
+          "publishTimestamp": 1795340745,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
             "path": "dsh-usage-stats"
           }
         }
@@ -292,11 +246,11 @@
       "versions": [
         {
           "version": "2.0.0",
-          "publishTimestamp": 1795240230,
+          "publishTimestamp": 1795340745,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "1abddd4b1ec5d56b49c1f5402589fc3d744c99d9",
+            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
             "path": "dsh-agent-memory"
           }
         }
