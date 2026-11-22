@@ -4,7 +4,7 @@
 
 | 项目 | 值 |
 | --- | --- |
-| DSH | DeepSeek Harness **Desktop 0.2.2-rc.1** |
+| DSH | DeepSeek Harness **Desktop 0.2.2-rc.5**（较早的记录来自 `0.2.2-rc.1`，见 [COMPATIBILITY.md](COMPATIBILITY.md)） |
 | 系统 | Windows 11（实测） |
 | 运行时 | Node `24.21.0`，pnpm `11.28.5`（Desktop 自带） |
 | 插件依赖 | 无第三方 npm 依赖、无需构建 |

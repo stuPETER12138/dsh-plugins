@@ -1,21 +1,25 @@
 # 兼容性
 
-本仓库插件围绕 **DeepSeek Harness Desktop 0.2.2-rc.1** 开发与验证。DSH 仍处于快速迭代期，插件用到的服务、插槽与浏览器模块系统在不同版本间可能变化，因此升级 DSH 后建议重新跑一遍验证。
+本仓库插件围绕 **DeepSeek Harness Desktop 0.2.2** 开发：2026-11-07 的首次全链路验证在 `0.2.2-rc.1` 上完成，之后的插件与增量在 `0.2.2-rc.5` 上验证（`dsh-usage-stats` 3.0.0 的记录没有写版本号）。DSH 仍处于快速迭代期，插件用到的服务、插槽与浏览器模块系统在不同版本间可能变化，因此升级 DSH 后建议重新跑一遍验证。
 
 ## 验证矩阵
 
-| 插件 | 版本 | DSH Desktop 0.2.2-rc.1 / Windows 11 | 类型 |
-| --- | --- | --- | --- |
-| `dsh-completion-notify` | 1.0.0 | ✅ 通过 | Host + 浏览器 |
-| `dsh-sticky-wall` | 1.2.0 | ✅ 通过 | 纯浏览器 |
-| `dsh-usage-stats` | 2.3.0 | ✅ 通过 | Host + 浏览器 |
+下表对应当前仓库里的 5 个插件与它们的当前版本；每一项的详细记录见 [VERIFICATION.md](VERIFICATION.md)。
 
-- 验证方式：在**隔离的临时 `DSH_HOME` + 临时 profile** 中，用 DSH 自带运行时（`resources/runtime/cli/bin/dsh.cmd`，`0.2.2-rc.1`）逐个安装本仓库的插件，检查依赖安装、组合包选择、`--dump-config` 组合结果、Host 半加载、Web 服务启动以及各插件 client bundle 是否由 `/plugins` 路由提供。记录见 [VERIFICATION.md](VERIFICATION.md)。
-- `dsh-sticky-wall` 1.2.0 把便签墙从等高网格改成按最短列落位的瀑布流：在隔离 profile 中安装后由无头 Edge 做交互与几何断言（列宽 / 14px 间距 / 同列紧贴 / 无重叠 / 墙高 / 缩放重排 / 新增与编辑时的重排），并与 1.1.0 的网格布局做对照；记录见 `VERIFICATION.md` 的增量记录。运行位置与插槽未变，仍是纯浏览器插件。
-- `dsh-usage-stats` 2.3.0 把「模型成本」卡改成「模型用量」：按 Token 量排序，占比改为 Token 占比，不到 1% 的模型同样折叠成「其他」。纯浏览器端改动，载荷与 Host 都不变；隔离实例复核了排序、折叠与合计。
-- `dsh-usage-stats` 2.2.0 调整三处默认值与列表口径：默认范围改为 90 天；模型成本按成本占比排序，成本不到 1% 的模型折叠成一行「其他」（悬停可看名单）；会话列表上限从 200 收到 100。载荷契约不变（Host 只改了会话上限），客户端另做排序与折叠；隔离实例复核了 33 项断言，记录见 `VERIFICATION.md` 的 2.2.0 增量。
-- `dsh-usage-stats` 2.1.0 把按天柱状图换成日历热力图（一格一天、一列一周、四档单色阶，悬停用原生 `title`），汇总数字从四个补到六个（新增活跃天数与最常用模型），概览卡改为「左日历 + 右数字」的两栏，范围控件收到 30 天 / 90 天 / 全部并默认全部。**Host 半与载荷契约没有变化**，仍是 2.0.0 的单路由与同一份 JSON；在隔离 profile 中用真实日志副本加无头 Edge 复核了三个范围的格子数、周列数、六项数字与载荷一致（43/43 断言），记录见 `VERIFICATION.md` 的 2.1.0 增量。
-- `dsh-usage-stats` 2.0.0 把面板重写成精简版（去掉供应商卡片、成本环、环比、搜索排序分页与会话详情，路由从 3 个收成 1 个）：在隔离 profile 中用真实会话日志的只读副本，校验了单路由载荷（7 天 / 全部时间、汇总与时间线一致、兜底单价标记、回环限制）与无头 Edge 里的实际渲染（侧栏入口、四个数字、按天柱状图、模型与会话行、范围切换），截图与记录见 `VERIFICATION.md` 的增量记录。Host 服务依赖未变。
+| 插件 | 版本 | 类型 | 实测 DSH | 结论 |
+| --- | --- | --- | --- | --- |
+| `dsh-completion-notify` | 1.0.0 | Host + 浏览器 | `0.2.2-rc.1` | ✅ 全链路通过；系统通知的真实弹出未端到端 |
+| `dsh-sticky-wall` | 1.4.4 | 纯浏览器 | `0.2.2-rc.1`、`0.2.2-rc.5` | ✅ 1.2.0 增量 + 1.4.4 多轮本机 e2e；文字记录只到 1.2.0 |
+| `dsh-gamepad-voice` | 1.1.0 | 纯浏览器 | `0.2.2-rc.5` | ✅ 1.0.0 / 1.1.0 增量通过（隔离 profile + CDP） |
+| `dsh-usage-stats` | 3.0.0 | Host + 浏览器 | `0.2.2-rc.1`（3.0.0 记录未写版本） | ✅ 3.0.0 增量通过（29 断言 + 7 个 Host 测试） |
+| `dsh-agent-memory` | 2.0.0 | Host + 浏览器 | 未记录 | ⚠️ 静态校验通过、本机已运行；端到端未记录 |
+
+- 验证方式：在**隔离的临时 `DSH_HOME` + 临时 profile** 中，用 DSH 自带运行时（`resources/runtime/cli/bin/dsh.cmd`）逐个安装插件，检查依赖安装、组合包选择、`--dump-config` 组合结果、Host 半加载、Web 服务启动以及各插件 client bundle 是否由 `/plugins` 路由提供；需要界面的功能再用无头 Chrome / Edge 通过 CDP 断言真实 DOM。
+- `dsh-completion-notify` 1.0.0 是 `0.2.2-rc.1` 全链路验证的一部分（安装、组合、Host 加载、bundle 提供均通过）。系统通知本身需要真实会话的完成 / 等待授权事件，隔离 profile 没有模型凭据，因此**弹窗行为未端到端验证**，只验证了事件注册与调用路径。
+- `dsh-sticky-wall` 1.2.0 把便签墙从等高网格改成按最短列落位的瀑布流：在隔离 profile 中由无头 Edge 做交互与几何断言（列宽 / 14px 间距 / 同列紧贴 / 无重叠 / 墙高 / 缩放重排 / 新增与编辑时的重排），并与 1.1.0 的网格布局对照，记录见 `VERIFICATION.md` 的增量记录。1.3.x / 1.4.x 新增**会话书签**（选中文字收藏、按会话索引、跳回原文字、归档清理）：瀑布流回归在 1.4.4 的代码上跑过 45/45 断言，书签与跳转用 `tmp/` 下的一次性 e2e 脚本在本机反复验证，证据在 `.verify-sticky-wall/`（两者都被 `.gitignore` 覆盖，未提交）；**这一段还没有写进 `VERIFICATION.md` 的文字记录**。
+- `dsh-gamepad-voice` 1.0.0 与 1.1.0 都在隔离 profile + CDP 下验证：安装结果为 `applied`、插件行 `active`、bundle `enabled + installed`，页面按「语音输入 → 手柄控制 → 怎么用 / 数据与隐私」渲染且无 console error；浏览器半另有 `tools/test-client.mjs` 的 263 项检查，用假手柄、假麦克风与假 DSH 客户端服务驱动，不读真实 `~/.dsh`。
+- `dsh-usage-stats` 2.0.0 → 2.3.0 逐版有增量记录（面板重写、日历热力图、范围默认值、模型用量口径），均带隔离实例的断言数；3.0.0 扩成「用量与资源」后，在隔离 profile 中用真实会话日志的只读副本验证了载荷三段（`resources` / `storage` / `cleanup`）、dry-run 路由与删除闸门（未确认 / 近期 / 未知 / 运行中一律拒绝，合法确认只删符合条件的目录），29/29 断言通过，另有 7 个 Host 隔离测试（`node --test dsh-usage-stats/test/host.test.mjs`）。唯一会写会话目录的路径是清理，且删除前 Host 会重新扫描复核。
+- `dsh-agent-memory` 2.0.0 没有隔离 profile 的端到端记录：目前验证到的是仓库静态校验（manifest、bundle patch、exports、JS 语法、locale、README）全部通过，以及本机 `desktop` profile 中插件已启用并生成了 `$DSH_HOME/agent-memory/core.md` 与 `records.jsonl`；`/memory` 的实际检索效果、三栏面板与合并建议需要你在真实会话里按插件 README 的「验证生效」走一遍。
 - 组合包没有声明 `engines.dsh` 版本门槛（避免预发布版本范围把用户挡在门外），因此安装前请**自行确认 DSH 版本**；低于 `0.2.2-rc.1` 的版本大概率缺少下面列出的 API。
 
 ## 运行时环境
@@ -23,11 +27,11 @@
 | 项目 | 值 |
 | --- | --- |
 | DSH 形态 | Desktop（Electron），profile `desktop` |
-| DSH 版本 | `0.2.2-rc.1` |
+| DSH 版本 | `0.2.2-rc.1`（2026-11-07 全链路）、`0.2.2-rc.5`（2026-11-17 之后的插件与增量，Electron 44） |
 | 内嵌 Node | `24.21.0` |
 | 内嵌 pnpm | `11.28.5` |
 | 操作系统 | Windows 11（x64） |
-| 浏览器内核 | DSH Desktop 内嵌 Chromium |
+| 浏览器内核 | DSH Desktop 内嵌 Chromium（`rc.5` 为 Electron 44） |
 
 ## 插件依赖的 DSH 能力
 
@@ -37,13 +41,16 @@
 | --- | --- |
 | `dsh-completion-notify` | `session/event` 会话事件（`turn/end`、`approval/asked`）、`user-questions/request` 观察、Host→浏览器循环路由、`settings.general.item` 插槽、`dsh-client-locale`；系统通知命令（Windows PowerShell / macOS `osascript` / Linux `notify-send`） |
 | `dsh-sticky-wall` | 纯浏览器：`sidebar.panellist`、`main` 与 `conversation.chat.text-interaction` 插槽、`sessions` / `workspaces` / `uiWorkspace` / `uiConversation` 客户端服务、`localStorage`、`--dsw-*` 主题 token |
-| `dsh-usage-stats` | `sessionPersistence.list()/open()`、`sessionQuery.readSession()`、内存 `sessions` 服务、仅回环可访问的 HTTP 路由、`sidebar.panellist` 与 `main` 插槽、`dsh-client-locale` |
+| `dsh-gamepad-voice` | 纯浏览器：`sidebar.panellist`、`main` 与 `shell.overlay` 插槽、`locale` / `sessions` / `conversation` / `uiWorkspace` / `layout` 客户端服务；浏览器 Gamepad API、`getUserMedia` + `MediaRecorder` + Web Audio；转写调用可选插件**语音输入**挂载的 `remote.speech` |
+| `dsh-usage-stats` | Host：`webServer`（仅回环路由）、`sessions`、`sessionPersistence.list()/open()`（旧格式日志回退 `sessionQuery.readSession()`）、`workspaceRegistry.archivedSessionIds`（缺失时没有可回收会话）、Node `process` / `os`，Windows 上另用 `tasklist` 取整应用内存；浏览器：`sidebar.panellist`、`main` 与 `dsh-client-locale` |
+| `dsh-agent-memory` | Host：`webServer`（仅回环路由）、`commands`（`/memory`）、`systemPrompt.context()`（一次性动态上下文）；浏览器：`sidebar.panellist`、`main` 与 `dsh-client-locale`；数据是本机 `$DSH_HOME/agent-memory/` 下的三个纯文本文件 |
 
 ## 平台说明
 
-- **Windows 11**：全部功能已实测。
-- **macOS / Linux**：代码里为系统通知准备了 `osascript` / `notify-send` 分支，但**没有在真实 macOS/Linux 上跑过**。DSH Desktop 本身的多平台行为也可能不同，使用前请自行验证。
-- **外部浏览器（`dsh web`）**：理论上可用（插件只依赖 Web 平台），但字体度量、Canvas 渲染与下载行为可能与内嵌 Chromium 有差异，未做实测。
+- **Windows 11**：全部功能已在本机实测。手柄用 Gamepad API 的标准映射（Xbox One 布局），语音用 `MediaRecorder` + Web Audio 后交给本机语音插件；两者都要求 DSH Desktop 窗口保持前台、并授予麦克风权限。
+- **macOS / Linux**：代码里为系统通知准备了 `osascript` / `notify-send` 分支，但**没有在真实 macOS/Linux 上跑过**；手柄与语音没有平台分支，理论一致，同样未实测。DSH Desktop 本身的多平台行为也可能不同，使用前请自行验证。
+- **外部浏览器（`dsh web`）**：插件只依赖 Web 平台，理论上可用。但麦克风需要安全上下文（`https` 或 `localhost`），`tasklist` 的内存口径只在 Windows 成立（其它平台退化为 Host 进程数字）；字体度量与渲染也可能与内嵌 Chromium 有差异，未做实测。
+- **语音输入的附加依赖**：`dsh-gamepad-voice` 的转写依赖 DSH 可选插件**语音输入**（`@deepseek-ai/dsh-experimental-voice-input-bundle`）与本机 SenseVoice 模型。禁用该插件或模型未准备时，手柄控制照常可用，语音区会给出对应原因而不是静默失败。
 
 ## 插件市场索引兼容性
 
