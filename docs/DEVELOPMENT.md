@@ -14,7 +14,7 @@ dsh-plugins/
 │  ├─ locale/en.json|zh.json  # 插件管理页展示用的标题/描述（meta.title/meta.description）
 │  ├─ icon.svg                # 插件卡片图标
 │  ├─ README.md               # 面向用户的功能、安装、使用说明
-│  └─ tools/ test/ ...        # 可选：单元测试与调试脚本（usage-stats、gamepad-voice 有）
+│  └─ test/ ...               # 可选：单元测试（usage-stats 有）
 ├─ index.json                 # 由 scripts/generate-index.mjs 生成的插件市场索引
 ├─ docs/                      # 安装、兼容性、开发、验证文档
 └─ scripts/                   # 校验、索引生成、安装验证脚本
@@ -131,14 +131,13 @@ $cli = 'D:\Software\DeepseekHarness\resources\runtime\cli\bin\dsh.cmd'
 
 ### 单元测试
 
-插件都没有构建步骤，`client.js` 就是源文件。带测试的两个插件直接跑 Node 自带的测试运行器或独立脚本：
+插件都没有构建步骤，`client.js` 就是源文件。目前带测试的是 `dsh-usage-stats`，直接跑 Node 自带的测试运行器：
 
 ```powershell
 node --test dsh-usage-stats/test/host.test.mjs
-node dsh-gamepad-voice/tools/test-client.mjs
 ```
 
-测试都是隔离的：usage-stats 的 Host 测试自建临时 `DSH_HOME`，gamepad-voice 的脚本用假手柄、假麦克风与假 DSH 客户端服务驱动浏览器半，不读真实 `~/.dsh`。
+测试是隔离的：Host 测试自建临时 `DSH_HOME`，不读真实 `~/.dsh`。
 
 ## 仓库脚本
 
@@ -156,7 +155,6 @@ node dsh-gamepad-voice/tools/test-client.mjs
    ```powershell
    node scripts/verify-repo.mjs
    node --test dsh-usage-stats/test/host.test.mjs
-   node dsh-gamepad-voice/tools/test-client.mjs
    ```
 
 3. 提交代码（**先提交插件代码**）：

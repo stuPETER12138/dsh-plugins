@@ -1,6 +1,0 @@
-# Controller & voice bundle: one row. The Host half is empty; the browser half
-# registers the left-sidebar entry, its panel, the gamepad polling loop, and the
-# frame-wide dictation HUD.
-- insert:
-    - id: gamepad-voice
-      name: '@local/dsh-gamepad-voice'

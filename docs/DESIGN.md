@@ -32,5 +32,5 @@
 ## 验证
 
 - 在隔离的 `DSH_HOME` 与临时 profile 里用 `link:` 安装全部插件，经本机 DSH Web + 无头 Chrome 截图核对浅色与深色下的实际渲染。本轮截图保存在 `.verify-design/`（被 `.gitignore` 忽略，仅本机复查用）。
-- `node scripts/verify-repo.mjs`；`dsh-usage-stats/test/host.test.mjs` 与 `dsh-gamepad-voice/tools/test-client.mjs`。
+- `node scripts/verify-repo.mjs`；`dsh-usage-stats/test/host.test.mjs`。
 - 设计扫描使用 kill-ai-slop 的 `scan.mjs`（分析时临时放在仓库外，不随仓库分发）。修完后剩余命中应只有本文"有意保留"列出的类别。
