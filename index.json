@@ -5,8 +5,8 @@
     "zh": "stuPETER12138 的 DSH 插件集"
   },
   "description": {
-    "en": "Personal DeepSeek Harness web plugins: notifications, sticky notes with session bookmarks, usage statistics and resources, long-term memory, and controller/voice control.",
-    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、便签墙与会话书签、用量与资源统计、长期记忆，以及手柄/语音控制。"
+    "en": "Personal DeepSeek Harness web plugins: notifications, sticky notes with session bookmarks, and usage statistics with resources.",
+    "zh": "自用的 DeepSeek Harness Web 插件集：任务通知、便签墙与会话书签、用量与资源统计。"
   },
   "metadata": {
     "categories": {
@@ -63,11 +63,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1795340745,
+          "publishTimestamp": 1795616607,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
+            "commit": "d909c2b76583372fa18aa35fa3d6417b0c75631c",
             "path": "dsh-completion-notify"
           }
         }
@@ -105,56 +105,12 @@
       "versions": [
         {
           "version": "1.4.4",
-          "publishTimestamp": 1795340745,
+          "publishTimestamp": 1795616607,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
+            "commit": "d909c2b76583372fa18aa35fa3d6417b0c75631c",
             "path": "dsh-sticky-wall"
-          }
-        }
-      ]
-    },
-    {
-      "name": "@local/dsh-gamepad-voice",
-      "title": {
-        "en": "Controller & voice",
-        "zh": "手柄与语音"
-      },
-      "description": {
-        "en": "Drive DSH from an Xbox One controller and replace typing with local speech. The left-sidebar page labels every action with its Xbox One button: the D-pad switches sessions and panels, A sends the draft, B stops the reply, X starts a new session, holding LB for about half a second switches where a transcript goes, RB cycles the recognition language, View returns to the conversation, and Menu opens this page; while a controller is connected the same hints appear in a bar at the lower-left. Holding Y records speech that is transcribed into the current draft. Audio is transcribed on this machine by the Voice input plugin's SenseVoice service and is never uploaded; the plugin stores only its settings in this browser. Speech requires the Voice input plugin (it provides the transcription service); the page offers working links to open Plugins or prepare its model, and a window blur, controller disconnect, or Escape ends recording.",
-        "zh": "用 Xbox One 手柄操作 DSH，用本机语音转写代替打字。左侧栏页面按 Xbox One 键位标注每个动作：十字键切换会话与面板，A 发送草稿，B 停止回复，X 新建会话，按住 LB 约半秒切换转写去向，RB 切换识别语言，View 返回对话，Menu 打开本页；连接手柄时窗口左下角还会显示同样的按键提示条。按住 Y 说话，松开后转写并进入当前草稿。录音由「语音输入」插件的 SenseVoice 在本机转写，不会上传；插件只在这个浏览器里保存设置。语音功能需要启用「语音输入」插件（转写服务由它提供），页面会给出打开插件页或准备模型的入口；窗口失焦、手柄断开或按 Esc 会结束录音。"
-      },
-      "icon": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHZpZXdCb3g9IjAgMCAzNiAzNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3YtYm9keSIgeDE9IjkiIHkxPSIxMiIgeDI9IjI5IiB5Mj0iMjgiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzY3QzdGRSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMzRjc3RDgiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0xMi42IDEyLjZoMTAuOGMyLjIgMCA0LjEgMS41IDQuNiAzLjZsMS4zIDUuMmMuNCAxLjgtMSAzLjQtMi44IDMuMi0xLjQtLjItMi42LTEuMS0zLTIuNGwtLjQtMS4yYy0uMy0uOS0xLjEtMS41LTItMS41aC02LjJjLS45IDAtMS43LjYtMiAxLjVsLS40IDEuMmMtLjQgMS4zLTEuNiAyLjItMyAyLjQtMS44LjItMy4yLTEuNC0yLjgtMy4ybDEuMy01LjJjLjUtMi4xIDIuNC0zLjYgNC42LTMuNloiIGZpbGw9InVybCgjZ3YtYm9keSkiLz4KICA8cGF0aCBkPSJNMTEuNiAxNy4xdjMuNk05LjggMTguOWgzLjYiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjIyLjkiIGN5PSIxNy40IiByPSIxLjQ1IiBmaWxsPSIjRkZGRkZGIi8+CiAgPGNpcmNsZSBjeD0iMjUuMyIgY3k9IjE5LjgiIHI9IjEuNDUiIGZpbGw9IiNGRkZGRkYiLz4KICA8cGF0aCBkPSJNMjYuMSA2LjljMSAuOSAxLjYgMi4yIDEuNiAzLjYiIHN0cm9rZT0idXJsKCNndi1ib2R5KSIgc3Ryb2tlLXdpZHRoPSIxLjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOSA1LjdjMS41IDEuMyAyLjQgMy4yIDIuNCA1LjMiIHN0cm9rZT0idXJsKCNndi1ib2R5KSIgc3Ryb2tlLXdpZHRoPSIxLjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K",
-      "author": "stuPETER12138",
-      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-gamepad-voice",
-      "repository": {
-        "url": "https://github.com/stuPETER12138/dsh-plugins",
-        "directory": "dsh-gamepad-voice"
-      },
-      "metadata": {
-        "category": "interface",
-        "keywords": [
-          "gamepad",
-          "controller",
-          "voice",
-          "dictation",
-          "speech",
-          "sidebar",
-          "手柄",
-          "语音输入",
-          "语音转写"
-        ]
-      },
-      "versions": [
-        {
-          "version": "1.1.0",
-          "publishTimestamp": 1795340745,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
-            "path": "dsh-gamepad-voice"
           }
         }
       ]
@@ -200,58 +156,12 @@
       "versions": [
         {
           "version": "3.0.0",
-          "publishTimestamp": 1795340745,
+          "publishTimestamp": 1795616607,
           "source": {
             "type": "git",
             "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
+            "commit": "d909c2b76583372fa18aa35fa3d6417b0c75631c",
             "path": "dsh-usage-stats"
-          }
-        }
-      ]
-    },
-    {
-      "name": "@local/dsh-agent-memory",
-      "title": {
-        "en": "Long-term memory",
-        "zh": "长期记忆"
-      },
-      "description": {
-        "en": "Edit semantic, episodic, and procedural memory separately from the left sidebar. Saved text is added to every turn, so answers follow your habits and preferences. Memory lives in three markdown files on this machine that you can read, edit, or clear at any time.",
-        "zh": "在左侧栏分别编辑语义记忆、情节记忆和过程记忆；保存后，每一轮对话都会带上这些内容，回答更贴合你平时的做法与偏好。记忆以三个 markdown 文件存在本机，随时能看、能改、能清空。"
-      },
-      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkxvbmctdGVybSBtZW1vcnkiPgogIDxwYXRoIGQ9Ik0xOCA1LjQgMzAuNiAxMC41IDE4IDE1LjYgNS40IDEwLjV6IiBmaWxsPSIjNEY1QUQ5Ii8+CiAgPHBhdGggZD0iTTUuNCAxNy4xIDE4IDIyLjIgMzAuNiAxNy4xIiBmaWxsPSJub25lIiBzdHJva2U9IiM3Qjg1RUYiIHN0cm9rZS13aWR0aD0iMi44IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNS40IDIzLjQgMTggMjguNSAzMC42IDIzLjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0FFQjNGNiIgc3Ryb2tlLXdpZHRoPSIyLjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K",
-      "author": "stuPETER12138",
-      "homepage": "https://github.com/stuPETER12138/dsh-plugins/tree/main/dsh-agent-memory",
-      "repository": {
-        "url": "https://github.com/stuPETER12138/dsh-plugins",
-        "directory": "dsh-agent-memory"
-      },
-      "metadata": {
-        "category": "assistant",
-        "keywords": [
-          "memory",
-          "long-term-memory",
-          "personalization",
-          "system-prompt",
-          "sidebar",
-          "semantic",
-          "episodic",
-          "procedural",
-          "记忆",
-          "长期记忆",
-          "个性化"
-        ]
-      },
-      "versions": [
-        {
-          "version": "2.0.0",
-          "publishTimestamp": 1795340745,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/stuPETER12138/dsh-plugins",
-            "commit": "3d43a6bd5681c6ef828633bf0a9e7ae6ceb30dff",
-            "path": "dsh-agent-memory"
           }
         }
       ]
